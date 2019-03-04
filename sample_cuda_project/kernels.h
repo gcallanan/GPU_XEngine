@@ -1,0 +1,1 @@
+void add(int N, float *x, float *y);
