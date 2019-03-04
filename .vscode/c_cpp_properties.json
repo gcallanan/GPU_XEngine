@@ -1,0 +1,17 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/home/jasper/cbf_gpu_file_system/usr/local/cuda-9.1$ "
+            ],
+            "defines": [],
+            "compilerPath": "cbf_gpu_file_system/usr/bin/",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"
+        }
+    ],
+    "version": 4
+}
