@@ -4,10 +4,12 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/home/jasper/cbf_gpu_file_system/usr/local/cuda-9.1$ "
+                "/usr/local/include/",
+                "/usr/include/",
+                "/usr/local/cuda-9.1/include/"
             ],
             "defines": [],
-            "compilerPath": "cbf_gpu_file_system/usr/bin/",
+            "compilerPath": "/usr/bin/gcc",
             "cStandard": "c11",
             "cppStandard": "c++17",
             "intelliSenseMode": "clang-x64"

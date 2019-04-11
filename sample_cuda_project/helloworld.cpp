@@ -2,6 +2,12 @@
 #include <cuda_runtime.h>
 #include <math.h>
 #include "kernels.h"
+#include <spead2/common_thread_pool.h>
+#include <spead2/recv_udp.h>
+#include <spead2/recv_heap.h>
+#include <spead2/recv_live_heap.h>
+#include <spead2/recv_ring_stream.h>
+#include <spead2/recv_udp_pcap.h>
 
 int main(void)
 {
@@ -17,7 +23,7 @@ int main(void)
   cudaMallocManaged(&y, N*sizeof(float));
 
   // initialize x and y arrays on the host
-  std::cout << "Populating Unified Memory BUffers" << std::endl;
+  std::cout << "Populating Unified Memory Buffers" << std::endl;
   for (int i = 0; i < N; i++) {
     x[i] = 1.0f;
     y[i] = 2.0f;
@@ -39,6 +45,7 @@ int main(void)
   std::cout << "Max error: " << maxError << std::endl;
 
   // Free memory
+  
   std::cout << "Freeing Unified Memory Buffers" << std::endl;
   cudaFree(x);
   cudaFree(y);
