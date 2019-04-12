@@ -1,3 +1,4 @@
+//Includes
 #include <iostream>
 #include <utility>
 #include <chrono>
@@ -9,9 +10,42 @@
 #include <spead2/recv_heap.h>
 #include <spead2/recv_live_heap.h>
 #include <spead2/recv_ring_stream.h>
+#include <bitset>
+#include <iomanip>
+
+//Defines
+#define NUM_ANTENNAS 64
+#define NUM_CHANNELS_PER_XENGINE 16 
+#define NUM_POLLS 2
+#define NUM_TIME_SAMPLES 256
+
+//Type Definitions
+typedef struct DualPollComplexStruct {
+  uint8_t realPol0;
+  uint8_t imagPol0;
+  uint8_t realPol1;
+  uint8_t imagPol1;
+} DualPollComplex;
+
+
+
+
+typedef struct XEnginePacketInStruct{
+    uint64_t timestamp_u64;
+    uint64_t fEnginesPresent_u64;
+    uint64_t frequencyBase_u64;
+    uint8_t numFenginePacketsProcessed;
+    DualPollComplex samples_s[NUM_CHANNELS_PER_XENGINE*NUM_ANTENNAS*NUM_TIME_SAMPLES];
+} XEnginePacketIn;
+ 
+int xEngCount = 0;
+uint64_t xEnginesPresent = 0ULL;
+XEnginePacketIn xEnginePacketInTemp = {0,0,0};
+//DualPollComplex * FEnginePacketOut_p[NUM_CHANNELS_PER_XENGINE*NUM_TIME_SAMPLES];
 
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point;
 
+//Static Variables
 static time_point start = std::chrono::high_resolution_clock::now();
 static std::uint64_t n_complete = 0;
 
@@ -52,15 +86,52 @@ public:
 
 void show_heap(const spead2::recv::heap &fheap)
 {
-    std::cout << "Received heap with CNT " << fheap.get_cnt() << '\n';
+    //std::cout << "Received heap with CNT " << fheap.get_cnt() << '\n';
     const auto &items = fheap.get_items();
-    std::cout << items.size() << " item(s)\n";
+    //std::cout << items.size() << " item(s)\n";
+    bool correctTimestamp = false;
+    uint64_t fengId;
+    DualPollComplex * FEnginePacketOut_p;
+
     for (const auto &item : items)
     {
-        std::cout << "    ID: 0x" << std::hex << item.id << std::dec << ' ';
-        std::cout << "[" << item.length << " bytes]";
-        std::cout << '\n';
+        //std::cout << "    ID: 0x" << std::hex << item.id << std::dec << ' ';
+        //std::cout << "[" << item.length << " bytes]";
+        //std::cout << '\n';
+        if(item.id == 0x1600){
+            uint8_t timestamp_pc[8];
+            if(8690677579776 == item.immediate_value){
+                correctTimestamp = true;
+            //    std::cout << "Timestamp: " << item.immediate_value << std::endl;//<< *timestamp_pi << std::endl;
+            }
+        }
+        if(item.id == 0x4101){
+            fengId = item.immediate_value;
+        }
+        if(item.id == 0x4103){
+            //std::cout << "Frequency: " << item.immediate_value << std::endl;
+        }
+        if(item.id == 0x4300){
+            FEnginePacketOut_p = (DualPollComplex *)item.ptr;
+        }
     }
+
+    if(correctTimestamp){
+        xEnginePacketInTemp.numFenginePacketsProcessed+=1;
+        xEnginePacketInTemp.fEnginesPresent_u64 |= ((uint64_t)1<<fengId);
+        for(size_t channel_index = 0; channel_index < NUM_CHANNELS_PER_XENGINE; channel_index++)
+        {
+            for(size_t time_index = 0; time_index < NUM_TIME_SAMPLES; time_index++)
+            {
+                DualPollComplex * inputSample = &FEnginePacketOut_p[channel_index*NUM_TIME_SAMPLES + time_index];
+                xEnginePacketInTemp.samples_s[time_index*NUM_CHANNELS_PER_XENGINE+channel_index*NUM_ANTENNAS+fengId] = *inputSample;
+            }
+            
+        }
+        std::cout << std::setfill('0') << std::setw(2) << int(fengId) <<" "<< std::setfill('0') << std::setw(2) <<int(xEnginePacketInTemp.numFenginePacketsProcessed)<< " " << std::bitset<64>(xEnginePacketInTemp.fEnginesPresent_u64) << " " <<  std::endl;
+    }
+
+
     std::vector<spead2::descriptor> descriptors = fheap.get_descriptors();
     for (const auto &descriptor : descriptors)
     {
@@ -87,7 +158,7 @@ void show_heap(const spead2::recv::heap &fheap)
     }
     time_point now = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = now - start;
-    std::cout << elapsed.count() << "\n";
+    //std::cout << elapsed.count() << "\n";
     std::cout << std::flush;
 }
 
@@ -108,7 +179,8 @@ static void run_ringbuffered()
     spead2::recv::ring_stream<> stream(worker, spead2::BUG_COMPAT_PYSPEAD_0_5_2);
     stream.set_memory_allocator(pool);
     boost::asio::ip::udp::endpoint endpoint(boost::asio::ip::address_v4::any(), 8888);
-    std::string filename = std::string("/home/kat/capture_fengine_data/2019-03-07/gcallanan_feng_capture_2s.pcap");
+    std::string filename = std::string("/home/kat/capture_fengine_data/2019-03-07/gcallanan_feng_capture_2s.pcap"); //4k
+    //std::string filename = std::string("/home/kat/capture_fengine_data/2019-03-15/gcallanan_feng_capture2019-03-15-08:43:22.pcap");//1k
     stream.emplace_reader<spead2::recv::udp_pcap_file_reader>(filename);
     while (true)
     {
@@ -128,6 +200,7 @@ static void run_ringbuffered()
 int main()
 {
     // run_trivial();
+    memset(&xEnginePacketInTemp,0,sizeof(xEnginePacketInTemp));
     run_ringbuffered();
     std::cout << "Received " << n_complete << " complete heaps\n";
     return 0;
