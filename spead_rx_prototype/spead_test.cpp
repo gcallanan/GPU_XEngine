@@ -90,8 +90,11 @@ void show_heap(const spead2::recv::heap &fheap)
     const auto &items = fheap.get_items();
     //std::cout << items.size() << " item(s)\n";
     bool correctTimestamp = false;
+    bool fengPacket = false;
+    bool xengPacket = false;
     uint64_t fengId;
     DualPollComplex * FEnginePacketOut_p;
+
 
     for (const auto &item : items)
     {
@@ -100,7 +103,7 @@ void show_heap(const spead2::recv::heap &fheap)
         //std::cout << '\n';
         if(item.id == 0x1600){
             uint8_t timestamp_pc[8];
-            if(8690677579776 == item.immediate_value){
+            if(8690677579776 == item.immediate_value || 57878484353024 == item.immediate_value || 57880661196800 == item.immediate_value){
                 correctTimestamp = true;
             //    std::cout << "Timestamp: " << item.immediate_value << std::endl;//<< *timestamp_pi << std::endl;
             }
@@ -113,10 +116,15 @@ void show_heap(const spead2::recv::heap &fheap)
         }
         if(item.id == 0x4300){
             FEnginePacketOut_p = (DualPollComplex *)item.ptr;
+            fengPacket = true;
+        }
+
+        if(item.id == 0x1800){
+            xengPacket = true;
         }
     }
 
-    if(correctTimestamp){
+    if(correctTimestamp && fengPacket){
         xEnginePacketInTemp.numFenginePacketsProcessed+=1;
         xEnginePacketInTemp.fEnginesPresent_u64 |= ((uint64_t)1<<fengId);
         for(size_t channel_index = 0; channel_index < NUM_CHANNELS_PER_XENGINE; channel_index++)
@@ -172,16 +180,16 @@ static void run_trivial()
     stream.join();
 }
 
-static void run_ringbuffered()
+static void run_ringbuffered(std::string fileName)
 {
     spead2::thread_pool worker;
     std::shared_ptr<spead2::memory_pool> pool = std::make_shared<spead2::memory_pool>(16384, 26214400, 12, 8);
     spead2::recv::ring_stream<> stream(worker, spead2::BUG_COMPAT_PYSPEAD_0_5_2);
     stream.set_memory_allocator(pool);
     boost::asio::ip::udp::endpoint endpoint(boost::asio::ip::address_v4::any(), 8888);
-    std::string filename = std::string("/home/kat/capture_fengine_data/2019-03-07/gcallanan_feng_capture_2s.pcap"); //4k
+     //4k
     //std::string filename = std::string("/home/kat/capture_fengine_data/2019-03-15/gcallanan_feng_capture2019-03-15-08:43:22.pcap");//1k
-    stream.emplace_reader<spead2::recv::udp_pcap_file_reader>(filename);
+    stream.emplace_reader<spead2::recv::udp_pcap_file_reader>(fileName);
     while (true)
     {
         try
@@ -201,8 +209,11 @@ int main()
 {
     // run_trivial();
     memset(&xEnginePacketInTemp,0,sizeof(xEnginePacketInTemp));
-    run_ringbuffered();
-    std::cout << "Received " << n_complete << " complete heaps\n";
+    std::string filename_in = std::string("/home/kat/capture_fengine_data/2019-04-16/gcallanan_xeng_capture_2019-04-16-05:46:08_4s.pcap");
+    run_ringbuffered(filename_in);
+    std::cout << "Reading from file: " << filename_in << std::endl;
+    std::cout << "Received " << n_complete << " complete F-Engine heaps\n";
+    n_complete = 0;
     return 0;
 }
 
