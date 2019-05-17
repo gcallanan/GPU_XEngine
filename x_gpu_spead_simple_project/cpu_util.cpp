@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <iostream>
 
 #include "xgpu.h"
 #include "xgpu_info.h"
@@ -176,8 +177,8 @@ void xgpuCheckResult(Complex *gpu, Complex *cpu, int verbose, ComplexInput *arra
 	    if(error > maxError) {
 	      maxError = error;
 	    }
-      if(f==0 && (i==0 || j == 0)){
-        //printf("Baselines %i, Station 1 %i, Station 2 %i, Pol1 %i, Pol2 %i\n",temp,i,j,pol1,pol2);
+      if(f==0 &&  (i==0 || i == 0)){
+      //  std::cout << "Baselines " <<temp<<",Station 1 "<<i<<", Station 2 "<<j<<", Pol1 "<<gpu[index].real<<", Pol2 "<<gpu[index].imag<<std::endl;
         temp+=1;
       }
 	    if(error > TOL) {

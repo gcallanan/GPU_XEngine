@@ -47,7 +47,7 @@ else
 LFLAGS = -L$(CUDA_LIBDIR) -L. -lcudart
 endif
 
-LFLAGS += -lboost_system -lspead2 -Xcompiler -pthread -lpcap
+LFLAGS += -lboost_system -lspead2 -Xcompiler -lpthread -lpcap -lrdmacm -libverbs
 
 RPATH = -Xlinker -rpath,'$${ORIGIN}:$${ORIGIN}/../lib'
 LIBXGPU = libxgpu.so
