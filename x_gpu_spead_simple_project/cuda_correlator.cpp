@@ -29,7 +29,8 @@
 #define NUM_CHANNELS_PER_XENGINE 16 
 #define NUM_POLLS 2
 #define NUM_TIME_SAMPLES 256
-#define NUM_BASELINES 8320
+#define QUADRANT_SIZE ((NUM_ANTENNAS/2+1)*(NUM_ANTENNAS/4))
+#define NUM_BASELINES QUADRANT_SIZE*4
 
 //Type Definitions
 typedef struct DualPollComplexStruct_i8 {
@@ -312,30 +313,35 @@ static void run_ringbuffered(std::string fileName)
     }
 }
 
-int getBaselineOffset(int i, int j){
-    if(i<j)
-      throw "Condition i>=j does not hold";
-    return i*(i+1)/2 + j;
+int getBaselineOffset(int ant0, int ant1){
+    if(ant0>ant1)
+      throw "Condition a0<=a1 does not hold";
+    int quadrant = 2*(ant0&1) + (ant1&1);
+    int quadrant_index = (ant1/2)*(ant1/2 + 1)/2 + ant0/2;
+    return quadrant*(QUADRANT_SIZE) + quadrant_index;
 }
 
 void displayBaseline(DualPollComplexStruct_i32* xEnginePacketOut, int i, int j){
     //int startOffset = getBaselineOffset(i,j);
-    for (int k = 0; k < NUM_CHANNELS_PER_XENGINE*64*64; k++)
+    for (int k = 0; k < NUM_CHANNELS_PER_XENGINE; k++)
     {
-      if(xEnginePacketOut[k].p1 != 0 || xEnginePacketOut[k].p2 != 0 || xEnginePacketOut[k].p3 != 0|| xEnginePacketOut[k].p4 != 0){ //|| xEnginePacketOut[k].p5 != 0 || xEnginePacketOut[k].p6 != 0 || xEnginePacketOut[k].p7 != 0|| xEnginePacketOut[k].p8 != 0){
-        std::cout << k 
-            << " " << xEnginePacketOut[k].p1 << " " << xEnginePacketOut[k].p2
-            << " " << xEnginePacketOut[k].p3 << " " << xEnginePacketOut[k].p4
-            << std::endl;
-      }
+      //if(xEnginePacketOut[k].p1 != 0 || xEnginePacketOut[k].p2 != 0 || xEnginePacketOut[k].p3 != 0|| xEnginePacketOut[k].p4 != 0){ //|| xEnginePacketOut[k].p5 != 0 || xEnginePacketOut[k].p6 != 0 || xEnginePacketOut[k].p7 != 0|| xEnginePacketOut[k].p8 != 0){
+      //  std::cout << k 
+      //      << " " << xEnginePacketOut[k].p1 << " " << xEnginePacketOut[k].p2
+      //      << " " << xEnginePacketOut[k].p3 << " " << xEnginePacketOut[k].p4
+      //      << std::endl;
+      //}
       //int baseline_offset = k*NUM_ANTENNAS*(NUM_ANTENNAS/2+1)/2 + i*(i+1)/2+j;
-      //int index = baseline_offset;
-      //std::cout<< i << " " << j << " " << k << " " << baseline_offset << " " << index << " " 
-      //    << " "<< xEnginePacketOut[index].p1 << " " << xEnginePacketOut[index].p2
-      //    << " "<< xEnginePacketOut[index].p3 << " " << xEnginePacketOut[index].p4
-      //    << " "<< xEnginePacketOut[index].p5 << " " << xEnginePacketOut[index].p6
-      //    << " "<< xEnginePacketOut[index].p7 << " " << xEnginePacketOut[index].p8
-      //    << std::endl;
+      int index = k*(QUADRANT_SIZE*4)+getBaselineOffset(i,j);
+      std::cout<< i << " " << j << " " << k << " " << index << " " 
+          << " "<< xEnginePacketOut[index].p1 << " " << xEnginePacketOut[index].p2
+          << " "<< xEnginePacketOut[index].p3 << " " << xEnginePacketOut[index].p4
+          << std::endl;
+      index = index + NUM_BASELINES*NUM_CHANNELS_PER_XENGINE;
+      std::cout<< i << " " << j << " " << k << " " << index << " " 
+          << " "<< xEnginePacketOut[index].p1 << " " << xEnginePacketOut[index].p2
+          << " "<< xEnginePacketOut[index].p3 << " " << xEnginePacketOut[index].p4
+          << std::endl;
     
     }
     
@@ -605,7 +611,7 @@ int main(int argc, char** argv) {
         max_bw, gbps);
   }
 
-displayBaseline((DualPollComplexStruct_i32*)cuda_matrix_h,0,0);
+displayBaseline((DualPollComplexStruct_i32*)cuda_matrix_h,13,61);
 
 #if (CUBE_MODE == CUBE_DEFAULT)
   
