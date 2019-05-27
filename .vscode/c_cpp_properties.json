@@ -6,7 +6,7 @@
                 "${workspaceFolder}/**",
                 "/usr/local/include/",
                 "/usr/include/",
-                "/usr/local/cuda-9.1/include/"
+                "/usr/local/cuda-10.1/include/"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

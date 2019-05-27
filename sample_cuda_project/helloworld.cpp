@@ -2,12 +2,12 @@
 #include <cuda_runtime.h>
 #include <math.h>
 #include "kernels.h"
-#include <spead2/common_thread_pool.h>
-#include <spead2/recv_udp.h>
-#include <spead2/recv_heap.h>
-#include <spead2/recv_live_heap.h>
-#include <spead2/recv_ring_stream.h>
-#include <spead2/recv_udp_pcap.h>
+//#include <spead2/common_thread_pool.h>
+//#include <spead2/recv_udp.h>
+//#include <spead2/recv_heap.h>
+//#include <spead2/recv_live_heap.h>
+//#include <spead2/recv_ring_stream.h>
+//#include <spead2/recv_udp_pcap.h>
 
 int main(void)
 {

@@ -333,12 +333,12 @@ void displayBaseline(DualPollComplexStruct_i32* xEnginePacketOut, int i, int j){
       //}
       //int baseline_offset = k*NUM_ANTENNAS*(NUM_ANTENNAS/2+1)/2 + i*(i+1)/2+j;
       int index = k*(QUADRANT_SIZE*4)+getBaselineOffset(i,j);
-      std::cout<< i << " " << j << " " << k << " " << index << " " 
+      std::cout<< "Real: "<< i << " " << j << " " << k << " " << index << " " 
           << " "<< xEnginePacketOut[index].p1 << " " << xEnginePacketOut[index].p2
           << " "<< xEnginePacketOut[index].p3 << " " << xEnginePacketOut[index].p4
           << std::endl;
       index = index + NUM_BASELINES*NUM_CHANNELS_PER_XENGINE;
-      std::cout<< i << " " << j << " " << k << " " << index << " " 
+      std::cout<<"Imag: " << i << " " << j << " " << k << " " << index << " " 
           << " "<< xEnginePacketOut[index].p1 << " " << xEnginePacketOut[index].p2
           << " "<< xEnginePacketOut[index].p3 << " " << xEnginePacketOut[index].p4
           << std::endl;
@@ -611,7 +611,7 @@ int main(int argc, char** argv) {
         max_bw, gbps);
   }
 
-displayBaseline((DualPollComplexStruct_i32*)cuda_matrix_h,13,61);
+displayBaseline((DualPollComplexStruct_i32*)cuda_matrix_h,16,58);
 
 #if (CUBE_MODE == CUBE_DEFAULT)
   

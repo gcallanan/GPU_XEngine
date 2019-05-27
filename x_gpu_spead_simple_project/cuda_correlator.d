@@ -1047,6 +1047,9 @@ cuda_correlator.o : cuda_correlator.cpp \
     /usr/include/boost/core/swap.hpp \
     /usr/include/boost/optional/optional_fwd.hpp \
     /usr/local/include/spead2/common_bind.h \
+    /usr/local/include/spead2/common_semaphore.h \
+    /usr/include/semaphore.h \
+    /usr/include/x86_64-linux-gnu/bits/semaphore.h \
     /usr/local/include/spead2/recv_udp_base.h \
     /usr/local/include/spead2/recv_udp_pcap.h \
     /usr/include/pcap/pcap.h \
@@ -1084,9 +1087,6 @@ cuda_correlator.o : cuda_correlator.cpp \
     /usr/include/boost/format/parsing.hpp \
     /usr/include/boost/format/free_funcs.hpp \
     /usr/include/boost/format/detail/unset_macros.hpp \
-    /usr/local/include/spead2/common_semaphore.h \
-    /usr/include/semaphore.h \
-    /usr/include/x86_64-linux-gnu/bits/semaphore.h \
     /usr/include/c++/5/bitset \
     /usr/include/c++/5/iomanip \
     cube/cube.h \
@@ -2140,6 +2140,9 @@ cuda_correlator.cpp :
     /usr/include/boost/core/swap.hpp :
     /usr/include/boost/optional/optional_fwd.hpp :
     /usr/local/include/spead2/common_bind.h :
+    /usr/local/include/spead2/common_semaphore.h :
+    /usr/include/semaphore.h :
+    /usr/include/x86_64-linux-gnu/bits/semaphore.h :
     /usr/local/include/spead2/recv_udp_base.h :
     /usr/local/include/spead2/recv_udp_pcap.h :
     /usr/include/pcap/pcap.h :
@@ -2177,9 +2180,6 @@ cuda_correlator.cpp :
     /usr/include/boost/format/parsing.hpp :
     /usr/include/boost/format/free_funcs.hpp :
     /usr/include/boost/format/detail/unset_macros.hpp :
-    /usr/local/include/spead2/common_semaphore.h :
-    /usr/include/semaphore.h :
-    /usr/include/x86_64-linux-gnu/bits/semaphore.h :
     /usr/include/c++/5/bitset :
     /usr/include/c++/5/iomanip :
     cube/cube.h :
