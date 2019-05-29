@@ -66,3 +66,45 @@ typedef struct XGpuPacketOutStruct{
     uint64_t frequencyBase_u64;/**< Base Frequency of the samples packet. Frequeny in packet run from frequencyBase_u64 to frequencyBase_u64+NUM_CHANNELS_PER_XENGINE */
     BaselineProductsStruct_out * baselines;/**< Pointer to xGpu baselines out. The real and imaginary components are split.*/
 } XGpuPacketOut;
+
+class StreamObject{
+    public:
+        StreamObject(uint64_t timestamp_u64,bool eos,uint64_t frequency): timestamp_u64(timestamp_u64),eos(eos),frequency(frequency){
+
+        }
+        StreamObject(bool eos): eos(eos){
+
+        }
+        uint64_t getTimestamp(){
+          return timestamp_u64;
+        }
+        uint64_t getFrequency(){
+          return frequency;
+        }
+        bool isEOS(){
+          return eos;
+        }
+    protected:
+        uint64_t timestamp_u64;
+        bool eos;
+        uint64_t frequency;
+};
+
+class Spead2RxPacket: public StreamObject
+{
+    public:
+        Spead2RxPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,uint64_t fEngineId,uint8_t *payloadPtr_p, spead2::recv::heap &fheap): StreamObject(timestamp_u64,eos,frequency),fEngineId(fEngineId),fheap(fheap){
+
+        }
+        uint64_t getFEngineId(){
+          return fEngineId;
+        }
+        uint8_t * getPayLoadPointer(){
+          return payloadPtr_p;
+        }
+    protected:
+        uint64_t fEngineId;
+        uint8_t * payloadPtr_p;
+        const spead2::recv::heap &fheap;
+
+};
