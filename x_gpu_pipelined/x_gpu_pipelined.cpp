@@ -10,10 +10,14 @@
 //Library Includes
 #include <iostream>
 #include <stdio.h>
+#include <deque>
 #include "tbb/flow_graph.h"
+#include <queue>
 
 //Local Includes
 #include "Spead2Rx.h"
+#include "Reorder.h"
+#include "global_definitions.h"
 
 /// \brief  Main function, launches all threads in the pipeline, exits when all other threads close.
 /// \param  argc An integer argument count of the command line arguments
@@ -23,24 +27,25 @@ int main(int argc, char** argv){
     tbb::flow::graph g;
 
     //Construct Graph Nodes
-    
+    multi_node reorderNode(g,tbb::flow::unlimited,Reorder());
     //Construct Edges
-
     //Start Graph
+    std::cout << "Starting Graph" << std::endl;
     Spead2Rx rx;
-    int i = 0;
-    //spead2::thread_pool worker;
-    //std::shared_ptr<spead2::memory_pool> pool = std::make_shared<spead2::memory_pool>(262144, 26214400, 64, 64);
-    //spead2::recv::ring_stream<> stream(worker, spead2::BUG_COMPAT_PYSPEAD_0_5_2);
-    //stream.set_memory_allocator(pool);
-    //boost::asio::ip::udp::endpoint endpoint(boost::asio::ip::address_v4::any(), 8888);
-    //stream.emplace_reader<spead2::recv::udp_reader>(endpoint, spead2::recv::udp_reader::default_max_size, 8 * 1024 * 1024);
-    
-    std::shared_ptr<StreamObject> spead2RxPacket = rx.receive_packet();
-    while(spead2RxPacket==nullptr||!spead2RxPacket->isEOS()){
-        std::cout << "Receiving Packet: " << i++ << std::endl;
+    int i = 0;    
+    boost::shared_ptr<StreamObject> spead2RxPacket = rx.receive_packet();
+    while(spead2RxPacket==nullptr || !spead2RxPacket->isEOS()){
+        //std::cout << "Receiving Packet: " << i++ <<std::endl;
         spead2RxPacket = rx.receive_packet();
+        if(spead2RxPacket!=nullptr){
+            //std::cout << "Timestamp: " << spead2RxPacket->getTimestamp() << std::endl;
+            reorderNode.try_put(spead2RxPacket);
+        }else{
+            //Descriptors received
+        }
     }
-    std::cout<<"Done Receiving Packets" << std::endl;
+    std::cout<<"Done Receiving Packets" << std::endl;  
+    g.wait_for_all();
+    std::cout<<"All streams finished processing, exiting program."<<std::endl;
     return 0;
 }

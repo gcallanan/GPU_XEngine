@@ -1,4 +1,6 @@
 #include "Spead2Rx.h"
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 
 Spead2Rx::Spead2Rx(): worker(),stream(worker, spead2::BUG_COMPAT_PYSPEAD_0_5_2),n_complete(0),endpoint(boost::asio::ip::address_v4::any(), 8888){
     pool = std::make_shared<spead2::memory_pool>(262144, 26214400, 64, 64);
@@ -6,19 +8,19 @@ Spead2Rx::Spead2Rx(): worker(),stream(worker, spead2::BUG_COMPAT_PYSPEAD_0_5_2),
     stream.emplace_reader<spead2::recv::udp_reader>(endpoint, spead2::recv::udp_reader::default_max_size, 8 * 1024 * 1024);
 }
 
-std::shared_ptr<StreamObject> Spead2Rx::receive_packet(){
+boost::shared_ptr<StreamObject> Spead2Rx::receive_packet(){
     try{
-        spead2::recv::heap fh = stream.pop();
+        boost::shared_ptr<spead2::recv::heap> fh = boost::make_shared<spead2::recv::heap>(stream.pop());
         n_complete++;
         return process_heap(fh);
     }
     catch (spead2::ringbuffer_stopped &e){
-        return std::make_shared<StreamObject>(true);
+        return boost::make_shared<StreamObject>(true);
     }
 }
 
-std::shared_ptr<StreamObject> Spead2Rx::process_heap(spead2::recv::heap &fheap){
-    const auto &items = fheap.get_items();
+boost::shared_ptr<StreamObject> Spead2Rx::process_heap(boost::shared_ptr<spead2::recv::heap> fheap){
+    const auto &items = fheap->get_items();
     uint64_t fengId;
     uint64_t timestamp;
     uint64_t frequency;
@@ -56,9 +58,10 @@ std::shared_ptr<StreamObject> Spead2Rx::process_heap(spead2::recv::heap &fheap){
     }
 
     if(fengPacket){
-        return std::make_shared<Spead2RxPacket>(timestamp,false,frequency,fengId,payloadPtr_p,fheap);
+        //std::cout<<"Spead2Rx: "<<timestamp<<" "<<frequency<<" "<<fengId<<std::endl;
+        return boost::make_shared<Spead2RxPacket>(timestamp,false,frequency,fengId,payloadPtr_p,fheap);
     }else{
-        return std::shared_ptr<Spead2RxPacket>(nullptr);
+        return boost::shared_ptr<Spead2RxPacket>(nullptr);
     }
 }
 

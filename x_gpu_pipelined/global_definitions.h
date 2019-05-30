@@ -1,8 +1,24 @@
+#ifndef _GLOBAL_DEFINITIONS_H
+#define _GLOBAL_DEFINITIONS_H
+
 #include <cstdint>
+#include "tbb/flow_graph.h"
+#include <boost/asio.hpp>
+#include <spead2/common_thread_pool.h>
+#include <spead2/recv_udp.h>
+#include <spead2/recv_udp_pcap.h>
+#include <spead2/recv_heap.h>
+#include <spead2/recv_live_heap.h>
+#include <spead2/recv_ring_stream.h>
+#include <bitset>
+#include <map>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 
 //Global Defines
 #define NUM_ANTENNAS 64
 #define NUM_CHANNELS_PER_XENGINE 16 
+#define FFT_SIZE (NUM_CHANNELS_PER_XENGINE*4*NUM_ANTENNAS)
 #define NUM_POLLS 2
 #define NUM_TIME_SAMPLES 256
 #define QUADRANT_SIZE ((NUM_ANTENNAS/2+1)*(NUM_ANTENNAS/4))
@@ -25,17 +41,17 @@ typedef struct DualPollComplexStruct_in {
  */
 #ifndef DP4A
 typedef struct BaselineProductsStruct_out {
-  float product0;/**< <Antenna0, Antenna0> product. int32*/
-  float product1;/**< <Antenna0, Antenna1> product. */
-  float product2;/**< <Antenna1, Antenna0> product. */
-  float product3;/**< <Antenna1, Antenna1> product. */
+  float product0;/**< <Antenna x, Antenna x> product. */
+  float product1;/**< <Antenna x, Antenna y> product. */
+  float product2;/**< <Antenna y, Antenna x> product. */
+  float product3;/**< <Antenna y, Antenna y> product. */
 } BaselineProducts_out;
 #else
 typedef struct BaselineProductsStruct_out {
-  int32_t product0;/**< <Antenna0, Antenna0> product. */
-  int32_t product1;/**< <Antenna0, Antenna1> product. */
-  int32_t product2;/**< <Antenna1, Antenna0> product. */
-  int32_t product3;/**< <Antenna1, Antenna1> product. */
+  int32_t product0;/**< <Antenna x, Antenna x> product. */
+  int32_t product1;/**< <Antenna x, Antenna y> product. */
+  int32_t product2;/**< <Antenna y, Antenna x> product. */
+  int32_t product3;/**< <Antenna y, Antenna y> product. */
 } BaselineProducts_out;
 #endif
 
@@ -84,6 +100,9 @@ class StreamObject{
         bool isEOS(){
           return eos;
         }
+        virtual bool isEmpty(){
+          return true;
+        }
     protected:
         uint64_t timestamp_u64;
         bool eos;
@@ -93,18 +112,62 @@ class StreamObject{
 class Spead2RxPacket: public StreamObject
 {
     public:
-        Spead2RxPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,uint64_t fEngineId,uint8_t *payloadPtr_p, spead2::recv::heap &fheap): StreamObject(timestamp_u64,eos,frequency),fEngineId(fEngineId),fheap(fheap){
+        Spead2RxPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,uint64_t fEngineId,uint8_t *payloadPtr_p, boost::shared_ptr<spead2::recv::heap>fheap): StreamObject(timestamp_u64,eos,frequency),fEngineId(fEngineId),fheap(fheap){
 
         }
         uint64_t getFEngineId(){
           return fEngineId;
         }
-        uint8_t * getPayLoadPointer(){
-          return payloadPtr_p;
+        boost::shared_ptr<spead2::recv::heap> getHeapPtr(){
+          return fheap;
         }
+        //virtual bool isEmpty(){
+        //  return(fheap==nullptr);
+        //}
+        
     protected:
         uint64_t fEngineId;
         uint8_t * payloadPtr_p;
-        const spead2::recv::heap &fheap;
+        boost::shared_ptr<spead2::recv::heap> fheap;
 
 };
+
+class ReorderPacket: public virtual StreamObject{
+    public:
+        ReorderPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency) : StreamObject(timestamp_u64,eos,frequency){
+            heaps_v.reserve(NUM_ANTENNAS);
+        }
+        
+        void addPacket(int antIndex,boost::shared_ptr<spead2::recv::heap> fheap){
+            if(!this->isPresent(antIndex)){
+              heaps_v[antIndex] = fheap;
+              numFenginePacketsProcessed++;
+              fEnginesPresent_u64 |= 1UL << antIndex;
+            }else{
+              std::cout << "Received a duplicate packet" << std::endl;
+              throw "Received a duplicate packet";
+            }
+        }
+
+        bool isPresent(int antIndex){
+            return (fEnginesPresent_u64 >> antIndex) & 1U;
+        }
+
+        int numPacketsReceived(){
+          return numFenginePacketsProcessed;
+        }
+
+        //virtual bool isEmpty(){
+        //  return heaps_v.size() == 0;
+        //}
+
+    protected:
+        uint8_t numFenginePacketsProcessed;/**< Number of F-Engine packets recieved, equal to NUM_ANTENNAS if all packets are received, missing antennas should have their data zeroed*/
+        uint64_t fEnginesPresent_u64;/**< The bits in this field from 0 to NUM_ANTENNAS will be set to 1 if the corresponding F-Engine packet has been recieved or 0 otherwise.. */
+        std::vector<boost::shared_ptr<spead2::recv::heap>> heaps_v;
+};
+
+typedef tbb::flow::multifunction_node<boost::shared_ptr<StreamObject>, tbb::flow::tuple<boost::shared_ptr<StreamObject> > > multi_node;
+
+
+#endif
