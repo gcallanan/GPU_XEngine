@@ -40,6 +40,7 @@ int main(int argc, char** argv){
         if(spead2RxPacket!=nullptr){
             //std::cout << "Timestamp: " << spead2RxPacket->getTimestamp() << std::endl;
             reorderNode.try_put(spead2RxPacket);
+
         }else{
             //Descriptors received
         }

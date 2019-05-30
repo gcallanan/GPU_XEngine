@@ -112,7 +112,7 @@ class StreamObject{
 class Spead2RxPacket: public StreamObject
 {
     public:
-        Spead2RxPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,uint64_t fEngineId,uint8_t *payloadPtr_p, boost::shared_ptr<spead2::recv::heap>fheap): StreamObject(timestamp_u64,eos,frequency),fEngineId(fEngineId),fheap(fheap){
+        Spead2RxPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,uint64_t fEngineId,uint8_t *payloadPtr_p, boost::shared_ptr<spead2::recv::heap>fheap): StreamObject(timestamp_u64,eos,frequency),fEngineId(fEngineId),fheap(fheap),payloadPtr_p(payloadPtr_p){
 
         }
         uint64_t getFEngineId(){
@@ -120,6 +120,9 @@ class Spead2RxPacket: public StreamObject
         }
         boost::shared_ptr<spead2::recv::heap> getHeapPtr(){
           return fheap;
+        }
+        uint8_t * getPayloadPtr_p(){
+          return payloadPtr_p;
         }
         //virtual bool isEmpty(){
         //  return(fheap==nullptr);
@@ -134,19 +137,36 @@ class Spead2RxPacket: public StreamObject
 
 class ReorderPacket: public virtual StreamObject{
     public:
-        ReorderPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency) : StreamObject(timestamp_u64,eos,frequency){
-            heaps_v.reserve(NUM_ANTENNAS);
+        ReorderPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency) : StreamObject(timestamp_u64,eos,frequency),fEnginesPresent_u64(0),numFenginePacketsProcessed(0),heaps_v(){
+            heaps_v.clear();
         }
         
-        void addPacket(int antIndex,boost::shared_ptr<spead2::recv::heap> fheap){
+        void addPacket(int antIndex,boost::shared_ptr<spead2::recv::heap> fheap,uint8_t* data_ptr){
+            //std::cout<<(int)this->numFenginePacketsProcessed <<" " << antIndex << std::endl;
             if(!this->isPresent(antIndex)){
-              heaps_v[antIndex] = fheap;
+              //std::cout << "1" << std::endl;
+              heaps_v.push_back(fheap);
+              //std::cout << "2" << std::endl;
               numFenginePacketsProcessed++;
               fEnginesPresent_u64 |= 1UL << antIndex;
+              if(antIndex==16 || antIndex == 58){
+                  //for (size_t i = 0; i < 256*16*4; i++)
+                  //{
+                    //std::cout << (int)data_ptr[i] << std::endl;
+                  //}
+                  //for (const auto &item : fheap->get_items()){
+                  //    if(item.id == 0x4300){
+                  //      //std::cout << (int)*item.ptr << std::endl;
+                  //      std::cout <<(long*)item.ptr << std::endl << " " << (long*)data_ptr << std::endl;
+                  //    }
+                  //}
+              }
+              //std::cout << "3" << std::endl;
             }else{
               std::cout << "Received a duplicate packet" << std::endl;
               throw "Received a duplicate packet";
             }
+            //std::cout << "4" << std::endl;
         }
 
         bool isPresent(int antIndex){
