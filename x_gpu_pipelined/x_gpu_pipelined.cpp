@@ -17,6 +17,7 @@
 //Local Includes
 #include "Spead2Rx.h"
 #include "Buffer.h"
+#include "Reorder.h"
 #include "global_definitions.h"
 
 /// \brief  Main function, launches all threads in the pipeline, exits when all other threads close.
@@ -28,7 +29,10 @@ int main(int argc, char** argv){
 
     //Construct Graph Nodes
     multi_node bufferNode(g,1,Buffer());
+    multi_node reorderNode(g,1,Reorder());
     //Construct Edges
+    tbb::flow::make_edge(tbb::flow::output_port<0>(bufferNode), reorderNode);
+
     //Start Graph
     std::cout << "Starting Graph" << std::endl;
     Spead2Rx rx;
