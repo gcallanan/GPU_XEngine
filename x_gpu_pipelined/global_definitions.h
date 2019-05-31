@@ -10,6 +10,7 @@
 #include <spead2/recv_heap.h>
 #include <spead2/recv_live_heap.h>
 #include <spead2/recv_ring_stream.h>
+#include <spead2/recv_stream.h>
 #include <bitset>
 #include <map>
 #include <boost/shared_ptr.hpp>
@@ -135,9 +136,9 @@ class Spead2RxPacket: public StreamObject
 
 };
 
-class ReorderPacket: public virtual StreamObject{
+class BufferPacket: public virtual StreamObject{
     public:
-        ReorderPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency) : StreamObject(timestamp_u64,eos,frequency),fEnginesPresent_u64(0),numFenginePacketsProcessed(0),heaps_v(){
+        BufferPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency) : StreamObject(timestamp_u64,eos,frequency),fEnginesPresent_u64(0),numFenginePacketsProcessed(0),heaps_v(){
             heaps_v.clear();
         }
         
@@ -149,7 +150,7 @@ class ReorderPacket: public virtual StreamObject{
               //std::cout << "2" << std::endl;
               numFenginePacketsProcessed++;
               fEnginesPresent_u64 |= 1UL << antIndex;
-              if(antIndex==16 || antIndex == 58){
+              //if(antIndex==16 || antIndex == 58){
                   //for (size_t i = 0; i < 256*16*4; i++)
                   //{
                     //std::cout << (int)data_ptr[i] << std::endl;
@@ -160,7 +161,7 @@ class ReorderPacket: public virtual StreamObject{
                   //      std::cout <<(long*)item.ptr << std::endl << " " << (long*)data_ptr << std::endl;
                   //    }
                   //}
-              }
+              //}
               //std::cout << "3" << std::endl;
             }else{
               std::cout << "Received a duplicate packet" << std::endl;

@@ -16,7 +16,7 @@
 
 //Local Includes
 #include "Spead2Rx.h"
-#include "Reorder.h"
+#include "Buffer.h"
 #include "global_definitions.h"
 
 /// \brief  Main function, launches all threads in the pipeline, exits when all other threads close.
@@ -27,7 +27,7 @@ int main(int argc, char** argv){
     tbb::flow::graph g;
 
     //Construct Graph Nodes
-    multi_node reorderNode(g,tbb::flow::unlimited,Reorder());
+    multi_node bufferNode(g,1,Buffer());
     //Construct Edges
     //Start Graph
     std::cout << "Starting Graph" << std::endl;
@@ -39,7 +39,7 @@ int main(int argc, char** argv){
         spead2RxPacket = rx.receive_packet();
         if(spead2RxPacket!=nullptr){
             //std::cout << "Timestamp: " << spead2RxPacket->getTimestamp() << std::endl;
-            reorderNode.try_put(spead2RxPacket);
+            bufferNode.try_put(spead2RxPacket);
 
         }else{
             //Descriptors received

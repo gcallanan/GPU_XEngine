@@ -1,29 +1,29 @@
-#include "Reorder.h"
+#include "Buffer.h"
 #include "global_definitions.h"
 #include <iostream>
 
-Reorder::Reorder(): first_timestamp(0){
+Buffer::Buffer(): first_timestamp(0){
     for (size_t i = 0; i < BUFFER_SIZE; i++)
     {
         buffer.push_front(nullptr);
     }
 }
 
-void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::output_ports_type &op){
+void Buffer::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::output_ports_type &op){
     //std::cout << "-" << std::endl;
     //std::get<0>(op).try_put(tbb::flow:continue_msg());//(std::make_shared<StreamObject>());
     if(inPacket->isEOS()){
-        std::cout <<"End of FIle Reorder.cpp" << std::endl;
+        std::cout <<"End of FIle Buffer.cpp" << std::endl;
         std::get<0>(op).try_put(inPacket);//(std::make_shared<StreamObject>());
-        //std::cout << "a" << std::endl;
+        std::cout << "a" << std::endl;
     }else{
-        //std::cout<<"Reorder Block Called"<<std::endl;
+        //std::cout<<"Buffer Block Called"<<std::endl;
         boost::shared_ptr<Spead2RxPacket> inPacket_cast = boost::dynamic_pointer_cast<Spead2RxPacket>(inPacket);
         uint64_t packet_timestamp = inPacket_cast->getTimestamp();
         //Check that correct timestamp is propegated
         if(first_timestamp>packet_timestamp){
-            std::cout << "Timestamp smaller than minimum received in Reorder class" << std::endl;
-            throw "Timestamp smaller than minimum received in Reorder class";
+            std::cout << "Timestamp smaller than minimum received in Buffer class" << std::endl;
+            throw "Timestamp smaller than minimum received in Buffer class";
         }
 
         uint8_t index = (packet_timestamp - first_timestamp)/TIMESTAMP_JUMP;
@@ -35,7 +35,7 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
                 buffer.push_front(nullptr);
                 buffer.pop_back();
             }
-            buffer[0] = (boost::make_shared<ReorderPacket>(packet_timestamp,false,inPacket->getFrequency()));
+            buffer[0] = (boost::make_shared<BufferPacket>(packet_timestamp,false,inPacket->getFrequency()));
             buffer[0]->addPacket(inPacket_cast->getFEngineId(),inPacket_cast->getHeapPtr(),inPacket_cast->getPayloadPtr_p());
             first_timestamp = packet_timestamp;
         }else if(index>=BUFFER_SIZE){//Packet just outside of range
@@ -59,13 +59,13 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
             //std::cout << "dasdbas " << (int)index << std::endl;
             if(numPops == BUFFER_SIZE){
                 //std::cout << "iasdbas " << (int)index << std::endl;
-                buffer[0] = (boost::make_shared<ReorderPacket>(packet_timestamp,false,inPacket->getFrequency()));
+                buffer[0] = (boost::make_shared<BufferPacket>(packet_timestamp,false,inPacket->getFrequency()));
                 buffer[0]->addPacket(inPacket_cast->getFEngineId(),inPacket_cast->getHeapPtr(),inPacket_cast->getPayloadPtr_p());
                 first_timestamp = buffer[0]->getTimestamp();
             }else{
                 buffer[index] = nullptr;
-                //std::cout << "fasdbas " << (int)index << std::endl;
-                buffer[index] = (boost::make_shared<ReorderPacket>(packet_timestamp,false,inPacket->getFrequency()));
+                
+                buffer[index] = (boost::make_shared<BufferPacket>(packet_timestamp,false,inPacket->getFrequency()));
                 //std::cout << "gasdbas " << (int)index << std::endl;
                 //std::cout << buffer[index]->getTimestamp() << " " << buffer[index]->isEOS() << " " << buffer[index]->numPacketsReceived() << std::endl;
                 buffer[index]->addPacket(inPacket_cast->getFEngineId(),inPacket_cast->getHeapPtr(),inPacket_cast->getPayloadPtr_p());
@@ -73,7 +73,7 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
             }
         }else if(buffer[index] == nullptr){
             //std::cout << "d" << std::endl;
-            buffer[index] = (boost::make_shared<ReorderPacket>(packet_timestamp,false,inPacket->getFrequency()));
+            buffer[index] = (boost::make_shared<BufferPacket>(packet_timestamp,false,inPacket->getFrequency()));
             buffer[index]->addPacket(inPacket_cast->getFEngineId(),inPacket_cast->getHeapPtr(),inPacket_cast->getPayloadPtr_p());
         }else{
             //std::cout << "e" << std::endl;

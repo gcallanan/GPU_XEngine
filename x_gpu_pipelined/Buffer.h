@@ -3,20 +3,20 @@
 #include <cstdio>
 #include "tbb/flow_graph.h"
 
-#ifndef _REORDER_H
-#define _REORDER_H
+#ifndef _BUFFER_H
+#define _BUFFER_H
 
 #define BUFFER_SIZE 20
 #define PACKET_THRESHOLD_BEFORE_SYNC 20 
 #define TIMESTAMP_JUMP (NUM_TIME_SAMPLES*2*FFT_SIZE)
 
-class Reorder{
+class Buffer{
     public:
-        Reorder();
+        Buffer();
         void operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::output_ports_type &op);
 
     private:
-        std::deque<boost::shared_ptr<ReorderPacket> > buffer;
+        std::deque<boost::shared_ptr<BufferPacket> > buffer;
         uint64_t first_timestamp;
         
 };
