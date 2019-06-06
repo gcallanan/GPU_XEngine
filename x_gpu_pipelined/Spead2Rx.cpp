@@ -12,6 +12,7 @@ boost::shared_ptr<StreamObject> Spead2Rx::receive_packet(){
     try{
         boost::shared_ptr<spead2::recv::heap> fh = boost::make_shared<spead2::recv::heap>(stream.pop());
         n_complete++;
+        pipelineCounts.Spead2Stage++;
         return process_heap(fh);
     }
     catch (spead2::ringbuffer_stopped &e){
@@ -26,6 +27,7 @@ boost::shared_ptr<StreamObject> Spead2Rx::process_heap(boost::shared_ptr<spead2:
     uint64_t frequency;
     uint8_t * payloadPtr_p;
     bool fengPacket = false;
+    
     for (const auto &item : items)
     {
         //std::cout << "    ID: 0x" << std::hex << item.id << std::dec << ' ';
@@ -59,9 +61,16 @@ boost::shared_ptr<StreamObject> Spead2Rx::process_heap(boost::shared_ptr<spead2:
 
     if(fengPacket){
         //std::cout<<"Spead2Rx: "<<timestamp<<" "<<frequency<<" "<<fengId<<std::endl;
+        if(fengId > 63){
+          std::cout << "Lol what" << std::endl;
+        }
         return boost::make_shared<Spead2RxPacket>(timestamp,false,frequency,fengId,payloadPtr_p,fheap);
     }else{
         return boost::shared_ptr<Spead2RxPacket>(nullptr);
     }
+}
+
+int Spead2Rx::getNumCompletePackets(){
+  return n_complete;
 }
 

@@ -13,8 +13,10 @@
 #include <spead2/recv_stream.h>
 #include <bitset>
 #include <map>
+#include <mutex>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include "xgpu.h"
 
 //Global Defines
 #define NUM_ANTENNAS 64
@@ -25,7 +27,20 @@
 #define QUADRANT_SIZE ((NUM_ANTENNAS/2+1)*(NUM_ANTENNAS/4))
 #define NUM_BASELINES (QUADRANT_SIZE*4)
 
+#define BUFFER_SIZE 20
+#define DEFAULT_ACCUMULATIONS_THRESHOLD 1632*4
+
 //Global Structs
+
+/**
+ * Struct Storing Pipeline Stages implementation 
+ */
+typedef struct PipelineCountsStruct{
+   std::atomic<int> Spead2Stage;
+   std::atomic<int> BufferStage;
+   std::atomic<int> ReorderStage;
+   std::atomic<int> GPUWRapperStage;
+} PipelineCounts;
 
 /**
  * Struct storing samples as formatted bythe F-Engines
@@ -84,6 +99,71 @@ typedef struct XGpuPacketOutStruct{
     BaselineProductsStruct_out * baselines;/**< Pointer to xGpu baselines out. The real and imaginary components are split.*/
 } XGpuPacketOut;
 
+
+typedef struct XGpuInputBufferPacketStruct{
+    uint8_t * data_ptr;
+    int offset;
+} XGpuInputBufferPacket;
+
+int getBaselineOffset(int ant0, int ant1);
+
+void displayBaseline(BaselineProducts_out* XGpuPacketOut, int i, int j);
+
+class XGpuBuffers{
+    public:
+        XGpuBuffers(): lockedLocations(0),mutex_array(new std::mutex[DEFAULT_ACCUMULATIONS_THRESHOLD]){
+          xgpuInfo(&xgpu_info);
+          int xgpu_error = 0;
+              
+          context.array_len = xgpu_info.vecLength*DEFAULT_ACCUMULATIONS_THRESHOLD;
+          context.matrix_len = xgpu_info.matLength;
+          context.array_h = (ComplexInput*)malloc(context.array_len*sizeof(ComplexInput));
+          context.matrix_h = (Complex*)malloc(context.matrix_len*sizeof(Complex));
+
+          xgpu_error = xgpuInit(&context, 0);
+          if(xgpu_error) {
+              std::cout << "xgpuInit returned error code: " << xgpu_error << std::endl;
+          }
+        };
+
+        XGPUContext * getXGpuContext_p(){
+          return &context;
+        }
+
+        XGpuInputBufferPacket allocateMemory(){
+          mutex_array[index].lock();
+          //std::cout << index << " grabbed" << std::endl;
+          XGpuInputBufferPacket structOut;
+          structOut.data_ptr = (uint8_t*)(context.array_h + xgpu_info.vecLength*index);
+          structOut.offset = index;
+          if(index < DEFAULT_ACCUMULATIONS_THRESHOLD - 1){
+            index++;
+          }else{
+            index=0;
+          }
+          lockedLocations++;
+          return structOut;
+        }
+
+        void freeMemory(int blockToFree){
+          mutex_array[blockToFree].unlock();
+          //std::cout << blockToFree << " freed" << std::endl;
+          lockedLocations--;
+        }
+
+        
+
+
+    private:
+        XGPUInfo xgpu_info;
+        boost::shared_ptr<std::mutex[]> mutex_array;
+        int lockedLocations;
+        int index = 0;
+        XGPUContext context;
+
+        
+};
+
 class StreamObject{
     public:
         StreamObject(uint64_t timestamp_u64,bool eos,uint64_t frequency): timestamp_u64(timestamp_u64),eos(eos),frequency(frequency){
@@ -140,29 +220,26 @@ class BufferPacket: public virtual StreamObject{
     public:
         BufferPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency) : StreamObject(timestamp_u64,eos,frequency),fEnginesPresent_u64(0),numFenginePacketsProcessed(0),heaps_v(){
             heaps_v.clear();
+            heaps_v.reserve(NUM_ANTENNAS);
+            data_pointers_v.clear();
+            data_pointers_v.reserve(NUM_ANTENNAS);
+            for (size_t i = 0; i < NUM_ANTENNAS; i++)
+            {
+              heaps_v.push_back(nullptr);
+              data_pointers_v.push_back(nullptr);
+            }
+            
         }
         
         void addPacket(int antIndex,boost::shared_ptr<spead2::recv::heap> fheap,uint8_t* data_ptr){
             //std::cout<<(int)this->numFenginePacketsProcessed <<" " << antIndex << std::endl;
             if(!this->isPresent(antIndex)){
-              //std::cout << "1" << std::endl;
-              heaps_v.push_back(fheap);
+              //std::cout << "1" << " " << antIndex <<std::endl;
+              heaps_v[antIndex]=fheap;
+              data_pointers_v[antIndex] = data_ptr;
               //std::cout << "2" << std::endl;
               numFenginePacketsProcessed++;
               fEnginesPresent_u64 |= 1UL << antIndex;
-              //if(antIndex==16 || antIndex == 58){
-                  //for (size_t i = 0; i < 256*16*4; i++)
-                  //{
-                    //std::cout << (int)data_ptr[i] << std::endl;
-                  //}
-                  //for (const auto &item : fheap->get_items()){
-                  //    if(item.id == 0x4300){
-                  //      //std::cout << (int)*item.ptr << std::endl;
-                  //      std::cout <<(long*)item.ptr << std::endl << " " << (long*)data_ptr << std::endl;
-                  //    }
-                  //}
-              //}
-              //std::cout << "3" << std::endl;
             }else{
               std::cout << "Received a duplicate packet" << std::endl;
               throw "Received a duplicate packet";
@@ -178,6 +255,10 @@ class BufferPacket: public virtual StreamObject{
           return numFenginePacketsProcessed;
         }
 
+        uint8_t * getDataPtr(int antIndex){
+          return data_pointers_v[antIndex];
+        }
+
         //virtual bool isEmpty(){
         //  return heaps_v.size() == 0;
         //}
@@ -186,11 +267,48 @@ class BufferPacket: public virtual StreamObject{
         uint8_t numFenginePacketsProcessed;/**< Number of F-Engine packets recieved, equal to NUM_ANTENNAS if all packets are received, missing antennas should have their data zeroed*/
         uint64_t fEnginesPresent_u64;/**< The bits in this field from 0 to NUM_ANTENNAS will be set to 1 if the corresponding F-Engine packet has been recieved or 0 otherwise.. */
         std::vector<boost::shared_ptr<spead2::recv::heap>> heaps_v;
+        std::vector<uint8_t*> data_pointers_v;
 };
 
+class ReorderPacket: public virtual StreamObject{
+    public:
+        ReorderPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,boost::shared_ptr<XGpuBuffers> xGpuBuffer): StreamObject(timestamp_u64,eos,frequency),xGpuBuffer(xGpuBuffer),packetData(xGpuBuffer->allocateMemory()){
+        
+        }
+        uint8_t * getDataPointer(){
+            return packetData.data_ptr; 
+        }
+        int getBufferOffset(){
+            return packetData.offset;
+        }
+        ~ReorderPacket(){
+          //std::cout << "Cleaning Packet " << std::endl;
+          xGpuBuffer->freeMemory(packetData.offset);
+        }
+    private:
+        XGpuInputBufferPacket packetData; 
+        boost::shared_ptr<XGpuBuffers> xGpuBuffer;
+
+};
+
+class GPUWrapperPacket: public virtual StreamObject{
+    public:
+        GPUWrapperPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency): StreamObject(timestamp_u64,eos,frequency), packetData(new BaselineProducts_out[NUM_CHANNELS_PER_XENGINE*NUM_BASELINES*2]){
+        
+        }
+        BaselineProducts_out * getDataPointer(){
+            return packetData.get(); 
+        }
+    private:
+        boost::shared_ptr<BaselineProducts_out[]> packetData; 
+
+};
 
 
 typedef tbb::flow::multifunction_node<boost::shared_ptr<StreamObject>, tbb::flow::tuple<boost::shared_ptr<StreamObject> > > multi_node;
 
+//Global Variables;
+extern PipelineCounts pipelineCounts;
+extern bool debug;
 
 #endif

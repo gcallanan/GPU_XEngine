@@ -6,8 +6,11 @@
 
 class Reorder{
     public:
-        Reorder();
+        Reorder(boost::shared_ptr<XGpuBuffers> xGpuBuffer);
         void operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::output_ports_type &op);
+
+    private:
+        boost::shared_ptr<XGpuBuffers> xGpuBuffer;
         
 };
 

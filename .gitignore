@@ -1,3 +1,7 @@
 *.o
 *.out
 *.bin
+*.d
+*.so
+xgpuinfo
+bench

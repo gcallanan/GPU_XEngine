@@ -26,7 +26,7 @@ class MultiBody {
             temp++;
             if(temp%4==0){
                 printf("%s %i\n", my_name.c_str(),temp);
-                std::get<0>(op).try_put(tbb::flow::continue_msg()); // put to even queue
+                std::get<0>(op).try_put(1); // put to even queue
             }
         }
     private:

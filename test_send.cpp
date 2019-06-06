@@ -26,6 +26,8 @@
 #include <spead2/send_stream.h>
 #include <thread>
 #include <chrono>
+#include <mutex>
+#include <iomanip>
 
 #define N_ANTS 64
 #define N_CHANNELS 4096
@@ -33,6 +35,7 @@
 #define N_CHANNELS_PER_X_ENGINE N_CHANNELS/N_ANTS/N_X_ENGINES_PER_ANT
 #define N_POL 2
 #define TIME_SAMPLES_PER_PACKET 256
+#define NUM_PACKETS 1000000
 
 enum SampleDataFormat{one_ant_test,two_ant_test,ramp,all_zero};
 SampleDataFormat sample_data_format = two_ant_test; 
@@ -44,8 +47,10 @@ SampleDataFormat sample_data_format = two_ant_test;
 #define ANTENNA1 16
 #define ANTENNA2 58  
 
+#define REPORTING_SPACE 1000
 using boost::asio::ip::udp;
-
+std::mutex m;
+auto start = std::chrono::high_resolution_clock::now();
 int main()
 {
     spead2::thread_pool tp;
@@ -98,14 +103,8 @@ int main()
     std::int8_t feng_raw[N_ANTS][N_CHANNELS_PER_X_ENGINE*TIME_SAMPLES_PER_PACKET*N_POL*2] = {};
     spead2::send::heap h[N_ANTS];
 
-    for(int j = 0; j<N_ANTS; j++){ 
-        h[j] = spead2::send::heap(f);
-
-        timestamp[j] = 2111*256*2*N_CHANNELS;
-//        std::cout << "Timestamp" << timestamp[j] << std::endl;
-        feng_id[j] = j;
-        frequency[j] = 2048;
-        
+    for (size_t j = 0; j < N_ANTS; j++)
+    {
         switch(sample_data_format){
             case one_ant_test:
             {
@@ -168,23 +167,57 @@ int main()
             }
             break;
         }
- 
-        //std::cout << sizeof(feng_raw[j]) << std::endl;
-        h[j].add_item(0x1600, timestamp[j]);
-        h[j].add_item(0x4101, feng_id[j]);
-        h[j].add_item(0x4103, frequency[j]);
-        h[j].add_item(0x4300, &feng_raw[j],sizeof(feng_raw[j]),true); 
-
-        stream.async_send_heap(h[j], [j] (const boost::system::error_code &ec, spead2::item_pointer_t bytes_transferred)
-        {
-            if (ec)
-                std::cerr << ec.message() << '\n';
-            else
-                std::cout << "Sent " << bytes_transferred << " bytes in heap of f_eng:" << j << std::endl;
-	    std::chrono::milliseconds timespan(1); // or whatever
-            std::this_thread::sleep_for(timespan);           
-        });
     }
+    
+
+    for (size_t k = 0; k < NUM_PACKETS; k++)
+    {
+        /* code */  
+        for(int j = 0; j<N_ANTS; j++){ 
+            h[j] = spead2::send::heap(f);
+
+            timestamp[j] = (2111+k)*256*2*N_CHANNELS;
+    //        std::cout << "Timestamp" << timestamp[j] << std::endl;
+            feng_id[j] = j;
+            frequency[j] = 2048;
+                
+            //std::cout << sizeof(feng_raw[j]) << std::endl;
+            h[j].add_item(0x1600, timestamp[j]);
+            h[j].add_item(0x4101, feng_id[j]);
+            h[j].add_item(0x4103, frequency[j]);
+            h[j].add_item(0x4300, &feng_raw[j],sizeof(feng_raw[j]),true); 
+            
+            m.lock();
+
+            stream.async_send_heap(h[j], [j,k] (const boost::system::error_code &ec, spead2::item_pointer_t bytes_transferred)
+            {
+                if (ec)
+                    std::cerr << ec.message() << '\n';
+                else
+                {
+                    //if(k%REPORTING_SPACE==0 && j == 0){
+                    //    std::clock_t current = std::clock();
+                    //    double duration = (current  - start ) / (double) CLOCKS_PER_SEC;
+                     //   start=current;
+                     //   std::cout<< k << duration << " " << std::endl;
+                    //}
+                    //std::cout << "Sent " << bytes_transferred << " bytes in heap of f_eng:" << j <<" Packet: "<<k<< std::endl;     
+                }
+                m.unlock();   
+            });
+            if(k%REPORTING_SPACE==0 && j == 0){
+                auto now = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> diff = now-start;
+                start=now;
+                double data_rate = (double)REPORTING_SPACE*N_ANTS*N_CHANNELS_PER_X_ENGINE*TIME_SAMPLES_PER_PACKET*N_POL*2*8/diff.count()/1000/1000/1000;
+                std::cout <<std::fixed<<std::setprecision(2)<<k<< " Sets Sent. Data Rate: "<< data_rate << " Gbps. 64*"<<REPORTING_SPACE <<" packets over "<< diff.count()<< "s" <<std::endl;
+                //std::cout<< k << " sets of 64 packets sent, time per packet : "<< diff.count()/64/REPORTING_SPACE*1000*1000 << " us. Time per set of 64: "<< diff.count()/REPORTING_SPACE*1000 << "ms. Time per block: " <<diff.count()<< std::endl;
+            }
+            std::chrono::microseconds timespan(1); // or whatever
+//            std::this_thread::sleep_for(timespan);   
+        }
+    }
+
     spead2::send::heap end(f);
     end.add_end();
     stream.async_send_heap(end, [] (const boost::system::error_code &ec, spead2::item_pointer_t bytes_transferred) {});

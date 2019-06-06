@@ -30,30 +30,30 @@
 #define NUM_POLLS 2
 #define NUM_TIME_SAMPLES 256
 #define QUADRANT_SIZE ((NUM_ANTENNAS/2+1)*(NUM_ANTENNAS/4))
-#define NUM_BASELINES QUADRANT_SIZE*4
+#define NUM_BASELINES (QUADRANT_SIZE*4)
 
 //Type Definitions
-typedef struct DualPollComplexStruct_i8 {
+typedef struct DualPollComplexStruct_in {
   int8_t realPol0;
   int8_t imagPol0;
   int8_t realPol1;
   int8_t imagPol1;
-} DualPollComplex_i8;
+} DualPollComplex_in;
 
 #ifndef DP4A
-typedef struct DualPollComplexStruct_i32 {
-  float p1;
-  float p2;
-  float p3;
-  float p4;
-} DualPollComplex_i32;
+typedef struct BaselineProductsStruct_out {
+  float product0;
+  float product1;
+  float product2;
+  float product3;
+} BaselineProducts_out;
 #else
-typedef struct DualPollComplexStruct_i32 {
-  int p1;
-  int p2;
-  int p3;
-  int p4;
-} DualPollComplex_i32;
+typedef struct BaselineProductsStruct_out {
+  int32_t product0;
+  int32_t product1;
+  int32_t product2;
+  int32_t product3;
+} BaselineProducts_out;
 #endif
 
 typedef struct xFpgaComplexStruct {
@@ -61,24 +61,24 @@ typedef struct xFpgaComplexStruct {
   int32_t imag;
 } xFpgaComplex;
 
-typedef struct XEnginePacketInStruct{
+typedef struct XGpuPacketInStruct{
     uint64_t timestamp_u64;
     uint64_t fEnginesPresent_u64;
     uint64_t frequencyBase_u64;
     uint8_t numFenginePacketsProcessed;
-    DualPollComplex_i8 * samples_s;//[NUM_CHANNELS_PER_XENGINE*NUM_ANTENNAS*NUM_TIME_SAMPLES];
-} XEnginePacketIn;
+    DualPollComplex_in * samples_s;//[NUM_CHANNELS_PER_XENGINE*NUM_ANTENNAS*NUM_TIME_SAMPLES];
+} XGpuPacketIn;
 
-typedef struct XEnginePacketOutStruct{
+typedef struct XGpuPacketOutStruct{
     uint64_t timestamp_u64;
     uint64_t frequencyBase_u64;
     xFpgaComplex samples_s[NUM_CHANNELS_PER_XENGINE*NUM_BASELINES];
-} XEnginePacketOut;
+} XGpuPacketOut;
  
 int xEngCount = 0;
 uint64_t xEnginesPresent = 0ULL;
-XEnginePacketIn xEnginePacketInTemp = {0,0,0};
-XEnginePacketOut xEnginePacketOutTemp = {0,0};
+XGpuPacketIn XGpuPacketInTemp = {0,0,0};
+XGpuPacketOut XGpuPacketOutTemp = {0,0};
 //DualPollComplex * FEnginePacketOut_p[NUM_CHANNELS_PER_XENGINE*NUM_TIME_SAMPLES];
 
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> time_point;
@@ -163,8 +163,8 @@ void show_heap(const spead2::recv::heap &fheap)
     uint64_t timestamp;
     uint64_t frequency;
     uint8_t * payloadPtr_p;
-    DualPollComplex_i8 * FEnginePacketOut_p;
-    xFpgaComplex * XEnginePacketOut_p;
+    DualPollComplex_in * FEnginePacketOut_p;
+    xFpgaComplex * XGpuPacketOut_p;
 
     for (const auto &item : items)
     {
@@ -193,7 +193,7 @@ void show_heap(const spead2::recv::heap &fheap)
           //{
           //  std::cout<<" "<<i<<" "<<(int)*(payloadPtr_p+i) << std::endl;;
           //}
-          //std::cout << item.is_immediate << " " << item.length << " " << (uint64_t)item.ptr << std::endl;
+          std::cout << item.is_immediate << " " << item.length << " " << (uint64_t)item.ptr << std::endl;
         }
 
         if(item.id == 0x1800){
@@ -205,43 +205,44 @@ void show_heap(const spead2::recv::heap &fheap)
     //57882838040576
     //57878484353024
     //57880661196800
-    if(xengPacket && timestamp == 40968192){
+    if(xengPacket){
       correctTimestamp = true;
       std::cout << "X-Engine Timestamp: " << timestamp << std::endl;
     }
 
-    if(fengPacket && timestamp == 40968192){
+    if(fengPacket){
       correctTimestamp = true;
       //std::cout << "F-Engine Timestamp: " << timestamp << std::endl;
     }
 
     if(correctTimestamp && fengPacket){
-        FEnginePacketOut_p = (DualPollComplex_i8*) payloadPtr_p;
-        xEnginePacketInTemp.numFenginePacketsProcessed+=1;
-        xEnginePacketInTemp.fEnginesPresent_u64 |= ((uint64_t)1<<fengId);
-        xEnginePacketInTemp.frequencyBase_u64 = frequency;
-        xEnginePacketInTemp.timestamp_u64 = timestamp;
+        FEnginePacketOut_p = (DualPollComplex_in*) payloadPtr_p;
+        XGpuPacketInTemp.numFenginePacketsProcessed+=1;
+        XGpuPacketInTemp.fEnginesPresent_u64 |= ((uint64_t)1<<fengId);
+        XGpuPacketInTemp.frequencyBase_u64 = frequency;
+        XGpuPacketInTemp.timestamp_u64 = timestamp;
         for(int channel_index = 0; channel_index < NUM_CHANNELS_PER_XENGINE; channel_index++)
         {
             for(int time_index = 0; time_index < NUM_TIME_SAMPLES; time_index++)
             {
-                DualPollComplex_i8 * inputSample = &FEnginePacketOut_p[channel_index*NUM_TIME_SAMPLES + time_index];
-                xEnginePacketInTemp.samples_s[time_index*NUM_CHANNELS_PER_XENGINE*NUM_ANTENNAS+channel_index*NUM_ANTENNAS+fengId] = *inputSample;
-                //std::cout<<time_index << " "<< channel_index << " "<< (time_index*NUM_CHANNELS_PER_XENGINE+channel_index*NUM_ANTENNAS+fengId) << " " << (int)inputSample->imagPol0 << " " << (int)inputSample->imagPol1 << " " << (int)inputSample->realPol0 << " " << (int)inputSample->realPol1 << " " << (int)xEnginePacketInTemp.samples_s[time_index*NUM_CHANNELS_PER_XENGINE+channel_index*NUM_ANTENNAS+fengId].imagPol0 << " " << (int)xEnginePacketInTemp.samples_s[time_index*NUM_CHANNELS_PER_XENGINE+channel_index*NUM_ANTENNAS+fengId].imagPol1 << " " << (int)xEnginePacketInTemp.samples_s[time_index*NUM_CHANNELS_PER_XENGINE+channel_index*NUM_ANTENNAS+fengId].realPol0 << " " << (int)xEnginePacketInTemp.samples_s[time_index*NUM_CHANNELS_PER_XENGINE+channel_index*NUM_ANTENNAS+fengId].realPol1 << std::endl;
+                DualPollComplex_in * inputSample = &FEnginePacketOut_p[channel_index*NUM_TIME_SAMPLES + time_index];
+                XGpuPacketInTemp.samples_s[time_index*NUM_CHANNELS_PER_XENGINE*NUM_ANTENNAS+channel_index*NUM_ANTENNAS+fengId] = *inputSample;
+                if(fengId == 16)
+                  std::cout<<time_index << " "<< channel_index << " "<< (time_index*NUM_CHANNELS_PER_XENGINE+channel_index*NUM_ANTENNAS+fengId) << " " << (int)inputSample->imagPol0 << " " << (int)inputSample->imagPol1 << " " << (int)inputSample->realPol0 << " " << (int)inputSample->realPol1 << " " << (int)XGpuPacketInTemp.samples_s[time_index*NUM_CHANNELS_PER_XENGINE+channel_index*NUM_ANTENNAS+fengId].imagPol0 << " " << (int)XGpuPacketInTemp.samples_s[time_index*NUM_CHANNELS_PER_XENGINE+channel_index*NUM_ANTENNAS+fengId].imagPol1 << " " << (int)XGpuPacketInTemp.samples_s[time_index*NUM_CHANNELS_PER_XENGINE+channel_index*NUM_ANTENNAS+fengId].realPol0 << " " << (int)XGpuPacketInTemp.samples_s[time_index*NUM_CHANNELS_PER_XENGINE+channel_index*NUM_ANTENNAS+fengId].realPol1 << std::endl;
             }
             
         }
-        std::cout << std::setfill('0') << std::setw(2) << int(fengId) <<" "<< std::setfill('0') << std::setw(2) <<int(xEnginePacketInTemp.numFenginePacketsProcessed)<< " " << std::bitset<64>(xEnginePacketInTemp.fEnginesPresent_u64) << " " <<  std::endl;
+        std::cout << std::setfill('0') << std::setw(2) << int(fengId) <<" "<< std::setfill('0') << std::setw(2) <<int(XGpuPacketInTemp.numFenginePacketsProcessed)<< " " << std::bitset<64>(XGpuPacketInTemp.fEnginesPresent_u64) << " " <<  std::endl;
     }
 
     if(correctTimestamp && xengPacket){
-        //std::cout << sizeof(xEnginePacketOutTemp) << std::endl;
-        XEnginePacketOut_p = (xFpgaComplex*) payloadPtr_p;
-        xEnginePacketOutTemp.frequencyBase_u64 = frequency;
-        xEnginePacketOutTemp.timestamp_u64 = timestamp;
+        //std::cout << sizeof(XGpuPacketOutTemp) << std::endl;
+        XGpuPacketOut_p = (xFpgaComplex*) payloadPtr_p;
+        XGpuPacketOutTemp.frequencyBase_u64 = frequency;
+        XGpuPacketOutTemp.timestamp_u64 = timestamp;
         for(size_t i = 0; i < NUM_CHANNELS_PER_XENGINE*NUM_BASELINES; i++)
         {
-          xEnginePacketOutTemp.samples_s[i] = XEnginePacketOut_p[i];
+          XGpuPacketOutTemp.samples_s[i] = XGpuPacketOut_p[i];
         }
         
     }
@@ -321,26 +322,26 @@ int getBaselineOffset(int ant0, int ant1){
     return quadrant*(QUADRANT_SIZE) + quadrant_index;
 }
 
-void displayBaseline(DualPollComplexStruct_i32* xEnginePacketOut, int i, int j){
+void displayBaseline(BaselineProducts_out* XGpuPacketOut, int i, int j){
     //int startOffset = getBaselineOffset(i,j);
     for (int k = 0; k < NUM_CHANNELS_PER_XENGINE; k++)
     {
-      //if(xEnginePacketOut[k].p1 != 0 || xEnginePacketOut[k].p2 != 0 || xEnginePacketOut[k].p3 != 0|| xEnginePacketOut[k].p4 != 0){ //|| xEnginePacketOut[k].p5 != 0 || xEnginePacketOut[k].p6 != 0 || xEnginePacketOut[k].p7 != 0|| xEnginePacketOut[k].p8 != 0){
+      //if(XGpuPacketOut[k].p1 != 0 || XGpuPacketOut[k].p2 != 0 || XGpuPacketOut[k].p3 != 0|| XGpuPacketOut[k].p4 != 0){ //|| XGpuPacketOut[k].p5 != 0 || XGpuPacketOut[k].p6 != 0 || XGpuPacketOut[k].p7 != 0|| XGpuPacketOut[k].p8 != 0){
       //  std::cout << k 
-      //      << " " << xEnginePacketOut[k].p1 << " " << xEnginePacketOut[k].p2
-      //      << " " << xEnginePacketOut[k].p3 << " " << xEnginePacketOut[k].p4
+      //      << " " << XGpuPacketOut[k].p1 << " " << XGpuPacketOut[k].p2
+      //      << " " << XGpuPacketOut[k].p3 << " " << XGpuPacketOut[k].p4
       //      << std::endl;
       //}
       //int baseline_offset = k*NUM_ANTENNAS*(NUM_ANTENNAS/2+1)/2 + i*(i+1)/2+j;
-      int index = k*(QUADRANT_SIZE*4)+getBaselineOffset(i,j);
+      int index = k*NUM_BASELINES+getBaselineOffset(i,j);
       std::cout<< "Real: "<< i << " " << j << " " << k << " " << index << " " 
-          << " "<< xEnginePacketOut[index].p1 << " " << xEnginePacketOut[index].p2
-          << " "<< xEnginePacketOut[index].p3 << " " << xEnginePacketOut[index].p4
+          << " "<< XGpuPacketOut[index].product0/256.0 << " " << XGpuPacketOut[index].product1/256.0
+          << " "<< XGpuPacketOut[index].product2/256.0 << " " << XGpuPacketOut[index].product3/256.0
           << std::endl;
       index = index + NUM_BASELINES*NUM_CHANNELS_PER_XENGINE;
       std::cout<<"Imag: " << i << " " << j << " " << k << " " << index << " " 
-          << " "<< xEnginePacketOut[index].p1 << " " << xEnginePacketOut[index].p2
-          << " "<< xEnginePacketOut[index].p3 << " " << xEnginePacketOut[index].p4
+          << " "<< XGpuPacketOut[index].product0/256.0 << " " << XGpuPacketOut[index].product1/256.0
+          << " "<< XGpuPacketOut[index].product2/256.0 << " " << XGpuPacketOut[index].product3/256.0
           << std::endl;
     
     }
@@ -349,38 +350,6 @@ void displayBaseline(DualPollComplexStruct_i32* xEnginePacketOut, int i, int j){
 }
 
 int main(int argc, char** argv) {
-//*********************************SPEAD TEST********************************
-
-    //filename_in = std::string("/home/kat/capture_fengine_data/2019-04-16/gcallanan_feng_capture_2019-04-16-05:46:11_4s.pcap");
-    //run_ringbuffered(filename_in);
-    //std::cout << "Reading from file: " << filename_in << std::endl;
-    //std::cout << "Received " << n_complete << " complete F-Engine heaps\n";
-
-    //std::ofstream outfile;
-    //outfile.open("/home/kat/capture_fengine_data/2019-04-16/xFpgaOut.txt", std::ios::out);
-    //for(size_t i = 0; i < NUM_CHANNELS_PER_XENGINE; i++)
-    //{
-      //outfile << sqrt(((uint64_t)xEnginePacketOutTemp.samples_s[i*NUM_BASELINES].real * (uint64_t)xEnginePacketOutTemp.samples_s[i*NUM_BASELINES].real) + ((uint64_t)xEnginePacketOutTemp.samples_s[i*NUM_BASELINES].imag * (uint64_t)xEnginePacketOutTemp.samples_s[i*NUM_BASELINES].imag)) << std::endl;
-    //  double angle = atan2(xEnginePacketOutTemp.samples_s[i*NUM_BASELINES].imag,xEnginePacketOutTemp.samples_s[i*NUM_BASELINES].real);
-    //  double power = sqrt(((int64_t)xEnginePacketOutTemp.samples_s[i].real * (uint64_t)xEnginePacketOutTemp.samples_s[i].real) + ((uint64_t)xEnginePacketOutTemp.samples_s[i].imag * (uint64_t)xEnginePacketOutTemp.samples_s[i].imag));
-      //angle = atan2(100,110);
-    //  if(angle > 3.14){
-    //    angle-=3.14;
-    //  }
-    //  outfile << power << " " << angle <<std::endl;
-    //}
-    //for(size_t i = 0; i < NUM_BASELINES; i++)
-    //{
-    //  outfile << sqrt(((int64_t)xEnginePacketOutTemp.samples_s[i].real * (uint64_t)xEnginePacketOutTemp.samples_s[i].real) + ((uint64_t)xEnginePacketOutTemp.samples_s[i].imag * (uint64_t)xEnginePacketOutTemp.samples_s[i].imag)) << std::endl;
-    //}
-    //outfile.close();
-    //********************************END SPEAD TEST*****************************
-  //for (int i = 0; i < NUM_CHANNELS_PER_XENGINE*NUM_TIME_SAMPLES; i++)
-  //{
-  //    std::cout<<(int)xEnginePacketInTemp.samples_s[i].realPol0 << " " <<(int)xEnginePacketInTemp.samples_s[i].imagPol0 << " " <<(int)xEnginePacketInTemp.samples_s[i].realPol1 << " " <<(int)xEnginePacketInTemp.samples_s[i].imagPol1 << " " <<std::endl;
-  //}
-
-  //TODO: This bit  
 
   int opt;
   int i, j;
@@ -508,19 +477,19 @@ int main(int argc, char** argv) {
 
   std::cout << "XGPU Test" << std::endl;
   std::cout << "Waiting to receive FEngine packets" << std::endl;
-  xEnginePacketInTemp.samples_s = (DualPollComplex_i8*)array_h;
-  //std::cout << (int)xEnginePacketInTemp.samples_s[xgpu_info.vecLength-1].imagPol0 << std::endl;
-  //memset(&xEnginePacketInTemp,0,sizeof(xEnginePacketInTemp));
+  XGpuPacketInTemp.samples_s = (DualPollComplex_in*)array_h;
+  //std::cout << (int)XGpuPacketInTemp.samples_s[xgpu_info.vecLength-1].imagPol0 << std::endl;
+  //memset(&XGpuPacketInTemp,0,sizeof(XGpuPacketInTemp));
   std::string filename_in = std::string("/home/kat/capture_fengine_data/2019-04-16/gcallanan_xeng_capture_2019-04-16-05:46:08_4s.pcap");
   run_ringbuffered(filename_in);
   std::cout << "Reading from file: " << filename_in << std::endl;
   std::cout << "Received " << n_complete << " complete X-Engine heaps\n";
 
 
-  printf("xGPU Array Size %i, xFpga Arraylength %i\n",xgpu_info.vecLength*sizeof(ComplexInput),sizeof(xEnginePacketInTemp.samples_s));
+  printf("xGPU Array Size %i, xFpga Arraylength %i\n",xgpu_info.vecLength*sizeof(ComplexInput),sizeof(XGpuPacketInTemp.samples_s));
   //for (int i = 0; i < xgpu_info.vecLength/2; i++)
   //{
-  //  std::cout << i << " " << (int)xEnginePacketInTemp.samples_s[i].imagPol0 <<" "<< (int)xEnginePacketInTemp.samples_s[i].imagPol1 <<" "<< (int)xEnginePacketInTemp.samples_s[i].realPol0 <<" "<< (int)xEnginePacketInTemp.samples_s[i].realPol1 << std::endl;
+  //  std::cout << i << " " << (int)XGpuPacketInTemp.samples_s[i].imagPol0 <<" "<< (int)XGpuPacketInTemp.samples_s[i].imagPol1 <<" "<< (int)XGpuPacketInTemp.samples_s[i].realPol0 <<" "<< (int)XGpuPacketInTemp.samples_s[i].realPol1 << std::endl;
   //}
 
   xgpu_error = xgpuInit(&context, device);
@@ -611,7 +580,7 @@ int main(int argc, char** argv) {
         max_bw, gbps);
   }
 
-displayBaseline((DualPollComplexStruct_i32*)cuda_matrix_h,16,58);
+displayBaseline((BaselineProductsStruct_out*)cuda_matrix_h,16,16);
 
 #if (CUBE_MODE == CUBE_DEFAULT)
   
