@@ -99,12 +99,13 @@ void Buffer::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::ou
             buffer[index]->addPacket(inPacket_cast->getFEngineId(),inPacket_cast->getHeapPtr(),inPacket_cast->getPayloadPtr_p());
         }else{
             buffer[index]->addPacket(inPacket_cast->getFEngineId(),inPacket_cast->getHeapPtr(),inPacket_cast->getPayloadPtr_p());
-        }
-        pipelineCounts.BufferStage++;
+        } 
     }
-    
+    pipelineCounts.BufferStage++;
+    if(debug){
+        std::cout << "z" << std::endl;
+    }
 
-    
 
     
 }

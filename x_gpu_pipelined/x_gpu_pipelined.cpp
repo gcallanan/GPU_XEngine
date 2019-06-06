@@ -55,50 +55,51 @@ int main(int argc, char** argv){
 
     //Start Graph
     std::cout << "Starting Graph" << std::endl;
-    Spead2Rx rx;
+    Spead2Rx rx(&bufferNode);
     int i = 0;    
-    boost::shared_ptr<StreamObject> spead2RxPacket = rx.receive_packet();
+    //boost::shared_ptr<StreamObject> spead2RxPacket = rx.receive_packet();
     auto start = std::chrono::high_resolution_clock::now();
-    while(spead2RxPacket==nullptr || !spead2RxPacket->isEOS()){
+    //while(spead2RxPacket==nullptr || !spead2RxPacket->isEOS()){
+    while(true){
+        std::this_thread::sleep_for (std::chrono::seconds(10));
 
         //Reporting Code
-        if(rx.getNumCompletePackets() % REPORTING_PACKETS_COUNT == 0){
-            auto now = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double> diff = now-start;
-            double bits_received = ((double)REPORTING_PACKETS_COUNT*NUM_TIME_SAMPLES*NUM_CHANNELS_PER_XENGINE*NUM_POLLS*2*8);
-            std::cout <<std::fixed<<std::setprecision(2)<< bits_received/1000/1000/1000 << " Gbits received in "<<diff.count()<<" seconds. Data Rate: " <<bits_received/1000/1000/1000/diff.count() << " Gbps" << std::endl;
-            std::cout << "Spead2Rx    Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.Spead2Stage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << (uint)pipelineCounts.Spead2Stage - prevSpead2Stage <<std::endl
-                      << "Buffer      Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.BufferStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << (uint)pipelineCounts.BufferStage - prevBufferStage <<std::endl
-                      << "Reorder     Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.ReorderStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.ReorderStage - prevReorderStage)*64 <<std::endl
-                      << "GPUWrapper  Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.GPUWRapperStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.GPUWRapperStage - prevGPUWrapperStage)*64 <<std::endl
-                      << std::endl;
+        uint numPacketsReceived = (uint)pipelineCounts.Spead2Stage - prevSpead2Stage;
+        auto now = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> diff = now-start;
+        double bits_received = ((double)numPacketsReceived*NUM_TIME_SAMPLES*NUM_CHANNELS_PER_XENGINE*NUM_POLLS*2*8);
+        std::cout <<std::fixed<<std::setprecision(2)<< bits_received/1000/1000/1000 << " Gbits received in "<<diff.count()<<" seconds. Data Rate: " <<bits_received/1000/1000/1000/diff.count() << " Gbps" << std::endl;
+        std::cout << "Spead2Rx    Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.Spead2Stage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << (uint)pipelineCounts.Spead2Stage - prevSpead2Stage <<std::endl
+                    << "Buffer      Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.BufferStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << (uint)pipelineCounts.BufferStage - prevBufferStage <<std::endl
+                    << "Reorder     Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.ReorderStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.ReorderStage - prevReorderStage)*64 <<std::endl
+                    << "GPUWrapper  Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.GPUWRapperStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.GPUWRapperStage - prevGPUWrapperStage)*64 <<std::endl
+                    << std::endl;
 
-            if((pipelineCounts.BufferStage-prevBufferStage) == 0){
-                debug = true;
-                std::cout << "Debug Set to true: "<<debug << std::endl
-                        << std::endl;
-                break;
-            }
-
-            prevSpead2Stage = pipelineCounts.Spead2Stage;
-            prevBufferStage = pipelineCounts.BufferStage;
-            prevReorderStage = pipelineCounts.ReorderStage;
-            prevGPUWrapperStage = pipelineCounts.GPUWRapperStage;
-
-            start=now;
+        if((pipelineCounts.BufferStage-prevBufferStage) == 0){
+            debug = true;
+            std::cout << "Debug Set to true: "<<debug << std::endl
+                    << std::endl;
+            break;
         }
+
+        prevSpead2Stage = pipelineCounts.Spead2Stage;
+        prevBufferStage = pipelineCounts.BufferStage;
+        prevReorderStage = pipelineCounts.ReorderStage;
+        prevGPUWrapperStage = pipelineCounts.GPUWRapperStage;
+
+        start=now;
 
         //Rx Code
-        if(spead2RxPacket!=nullptr){
-            if(!bufferNode.try_put(spead2RxPacket)){
-                std::cout << "Packet Failed to be passed to buffer class" << std::endl;
-            }
-        }
+        //if(spead2RxPacket!=nullptr){
+        //    if(!bufferNode.try_put(spead2RxPacket)){
+        //        std::cout << "Packet Failed to be passed to buffer class" << std::endl;
+        //   }
+        //}
 
-        spead2RxPacket = rx.receive_packet();
+        //spead2RxPacket = rx.receive_packet();
     }
     std::cout<<"Done Receiving Packets" << std::endl;  
-    g.wait_for_all();
+    //g.wait_for_all();
     std::cout<<"All streams finished processing, exiting program."<<std::endl;
     return 0;
 }

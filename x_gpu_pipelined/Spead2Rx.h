@@ -8,18 +8,34 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
+
+
 class Spead2Rx{
+    class trivial_stream : public spead2::recv::stream
+    {
+        private:
+            virtual void heap_ready(spead2::recv::live_heap &&heap) override;
+            std::promise<void> stop_promise;
+            multi_node * nextNodeNested;
+        public:
+            using spead2::recv::stream::stream;
+            virtual void stop_received() override;
+            void join();
+            void addNextNodePointer(multi_node * nextNodeNested);
+    };
     public:
-        Spead2Rx();
-        boost::shared_ptr<StreamObject> receive_packet();
+        Spead2Rx(multi_node * nextNode);
+        //boost::shared_ptr<StreamObject> receive_packet();
         int getNumCompletePackets();
     private:
         spead2::thread_pool worker;
-        std::shared_ptr<spead2::memory_pool> pool;
-        spead2::recv::ring_stream<> stream;
+        trivial_stream stream;
         boost::asio::ip::udp::endpoint endpoint;
         long int n_complete;
         static boost::shared_ptr<StreamObject> process_heap(boost::shared_ptr<spead2::recv::heap> fheap);
+        multi_node * nextNode;
 };
+
+
 
 #endif
