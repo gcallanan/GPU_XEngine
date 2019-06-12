@@ -28,7 +28,7 @@ void displayBaseline(BaselineProducts_out* XGpuPacketOut, int i, int j){
           << " "<< (XGpuPacketOut[index].product2/256.0/1600.0) << " " << (XGpuPacketOut[index].product3/256.0/1600.0)
           << std::endl;
       index = index + NUM_BASELINES*NUM_CHANNELS_PER_XENGINE;
-      std::cout<<"Imag: " << i << " " << j << " " << k << " " << index << " " 
+      std::cout<< "Imag: " << i << " " << j << " " << k << " " << index << " " 
           << " "<< (XGpuPacketOut[index].product0/256.0/1600.0) << " " << (XGpuPacketOut[index].product1/256.0/1600.0)
           << " "<< (XGpuPacketOut[index].product2/256.0/1600.0) << " " << (XGpuPacketOut[index].product3/256.0/1600.0)
           << std::endl;
