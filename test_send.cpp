@@ -28,6 +28,7 @@
 #include <chrono>
 #include <mutex>
 #include <iomanip>
+#include <atomic>
 
 #define N_ANTS 64
 #define N_CHANNELS 4096
@@ -35,7 +36,7 @@
 #define N_CHANNELS_PER_X_ENGINE N_CHANNELS/N_ANTS/N_X_ENGINES_PER_ANT
 #define N_POL 2
 #define TIME_SAMPLES_PER_PACKET 256
-#define NUM_PACKETS 1000000
+#define NUM_PACKETS 10000000
 
 enum SampleDataFormat{one_ant_test,two_ant_test,ramp,all_zero};
 SampleDataFormat sample_data_format = two_ant_test; 
@@ -47,7 +48,10 @@ SampleDataFormat sample_data_format = two_ant_test;
 #define ANTENNA1 16
 #define ANTENNA2 58  
 
-#define REPORTING_SPACE 1000
+#define REPORTING_SPACE 20000
+
+std::atomic<int> numSent;
+
 using boost::asio::ip::udp;
 std::mutex m;
 auto start = std::chrono::high_resolution_clock::now();
@@ -170,9 +174,10 @@ int main()
     }
     
 
-    for (size_t k = 0; k < NUM_PACKETS; k++)
+    for (size_t k = 1; k < NUM_PACKETS; k++)
     {
-        /* code */  
+        /* code */ 
+        numSent=0; 
         for(int j = 0; j<N_ANTS; j++){ 
             h[j] = spead2::send::heap(f);
 
@@ -187,7 +192,7 @@ int main()
             h[j].add_item(0x4103, frequency[j]);
             h[j].add_item(0x4300, &feng_raw[j],sizeof(feng_raw[j]),true); 
             
-            m.lock();
+            //m.lock();
 
             stream.async_send_heap(h[j], [j,k] (const boost::system::error_code &ec, spead2::item_pointer_t bytes_transferred)
             {
@@ -195,6 +200,7 @@ int main()
                     std::cerr << ec.message() << '\n';
                 else
                 {
+                    numSent++;
                     //if(k%REPORTING_SPACE==0 && j == 0){
                     //    std::clock_t current = std::clock();
                     //    double duration = (current  - start ) / (double) CLOCKS_PER_SEC;
@@ -202,8 +208,7 @@ int main()
                      //   std::cout<< k << duration << " " << std::endl;
                     //}
                     //std::cout << "Sent " << bytes_transferred << " bytes in heap of f_eng:" << j <<" Packet: "<<k<< std::endl;     
-                }
-                m.unlock();   
+                }  
             });
             if(k%REPORTING_SPACE==0 && j == 0){
                 auto now = std::chrono::high_resolution_clock::now();
@@ -213,8 +218,16 @@ int main()
                 std::cout <<std::fixed<<std::setprecision(2)<<k<< " Sets Sent. Data Rate: "<< data_rate << " Gbps. 64*"<<REPORTING_SPACE <<" packets over "<< diff.count()<< "s" <<std::endl;
                 //std::cout<< k << " sets of 64 packets sent, time per packet : "<< diff.count()/64/REPORTING_SPACE*1000*1000 << " us. Time per set of 64: "<< diff.count()/REPORTING_SPACE*1000 << "ms. Time per block: " <<diff.count()<< std::endl;
             }
-            std::chrono::microseconds timespan(1); // or whatever
-//            std::this_thread::sleep_for(timespan);   
+  
+        }
+        while(true){
+            if(numSent>=N_ANTS){
+                std::chrono::microseconds timespan(150); // or whatever
+                std::this_thread::sleep_for(timespan); 
+                //std::cout << numSent << std::endl;
+                numSent==0;
+                break;
+            }
         }
     }
 

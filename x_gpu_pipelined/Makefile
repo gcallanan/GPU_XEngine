@@ -161,7 +161,7 @@ ifneq "$V" "1"
 	VERBOSE=@
 endif
 
-CUDA_CORRELATOR_OBJS  = x_gpu_pipelined.o Spead2Rx.o Buffer.o Reorder.o global_definitions.o GPUWrapper.o
+CUDA_CORRELATOR_OBJS  = x_gpu_pipelined.o Spead2Rx.o Buffer.o Reorder.o global_definitions.o GPUWrapper.o SpeadTx.o
 
 XGPUINFO_OBJS  = xgpuinfo.o
 

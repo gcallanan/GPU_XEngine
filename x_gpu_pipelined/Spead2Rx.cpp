@@ -88,7 +88,7 @@ void Spead2Rx::trivial_stream::heap_ready(spead2::recv::live_heap &&heap)
             std::cout << "End of stream"<< std::endl;
             throw "End of Spead stream";
           }
-          pipelineCounts.Spead2Stage++;
+          pipelineCounts.Spead2RxStage++;
           outPacketArmortiser->addPacket(spead2RxPacket);
           if(outPacketArmortiser->getArmortiserSize() >= NUM_ANTENNAS*ARMORTISER_SIZE){
             if(!nextNodeNested->try_put(outPacketArmortiser)){

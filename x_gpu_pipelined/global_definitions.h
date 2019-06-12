@@ -38,10 +38,11 @@
  * Struct Storing Pipeline Stages implementation 
  */
 typedef struct PipelineCountsStruct{
-   std::atomic<int> Spead2Stage;
+   std::atomic<int> Spead2RxStage;
    std::atomic<int> BufferStage;
    std::atomic<int> ReorderStage;
    std::atomic<int> GPUWRapperStage;
+   std::atomic<int> Spead2TxStage;
 } PipelineCounts;
 
 /**

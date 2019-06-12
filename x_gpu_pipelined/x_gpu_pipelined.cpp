@@ -17,11 +17,15 @@
 #include <iomanip>
 
 //Local Includes
+#include "global_definitions.h"
+
 #include "Spead2Rx.h"
 #include "Buffer.h"
 #include "Reorder.h"
 #include "GPUWrapper.h"
-#include "global_definitions.h"
+#include "SpeadTx.h"
+
+
 
 #define REPORTING_PACKETS_COUNT 100000
 
@@ -33,46 +37,52 @@ int main(int argc, char** argv){
     tbb::flow::graph g;
 
     //Multithreading Information
-    pipelineCounts.Spead2Stage=1;
+    pipelineCounts.Spead2RxStage=1;
     pipelineCounts.BufferStage=1;
     pipelineCounts.ReorderStage=1;
     pipelineCounts.GPUWRapperStage=1;
+    pipelineCounts.Spead2TxStage=1;
 
-    int prevSpead2Stage=0;//.load(pipelineCounts.Spead2Stage);
+    int prevSpead2RxStage=0;//.load(pipelineCounts.Spead2Stage);
     int prevBufferStage=0;//.load(pipelineCounts.BufferStage);
     int prevReorderStage=0;//.load(pipelineCounts.ReorderStage);
     int prevGPUWrapperStage=0;
+    int prevSpead2TxStage=0;
 
     boost::shared_ptr<XGpuBuffers> xGpuBuffer = boost::make_shared<XGpuBuffers>();
     //Construct Graph Nodes
     multi_node bufferNode(g,1,Buffer());
     multi_node reorderNode(g,tbb::flow::unlimited,Reorder(xGpuBuffer));
     multi_node gpuNode(g,1,GPUWrapper(xGpuBuffer));
+    multi_node txNode(g,1,SpeadTx());
+    Spead2Rx rx(&bufferNode);
     
     //Construct Edges
     tbb::flow::make_edge(tbb::flow::output_port<0>(bufferNode), reorderNode);
     tbb::flow::make_edge(tbb::flow::output_port<0>(reorderNode), gpuNode);
+    tbb::flow::make_edge(tbb::flow::output_port<0>(gpuNode),txNode);
 
     //Start Graph
     std::cout << "Starting Graph" << std::endl;
-    Spead2Rx rx(&bufferNode);
+    
     int i = 0;    
     //boost::shared_ptr<StreamObject> spead2RxPacket = rx.receive_packet();
     auto start = std::chrono::high_resolution_clock::now();
     //while(spead2RxPacket==nullptr || !spead2RxPacket->isEOS()){
     while(true){
-        std::this_thread::sleep_for (std::chrono::seconds(1));
+        std::this_thread::sleep_for (std::chrono::seconds(10));
 
         //Reporting Code
-        uint numPacketsReceived = (uint)pipelineCounts.Spead2Stage - prevSpead2Stage;
+        uint numPacketsReceived = (uint)pipelineCounts.Spead2RxStage - prevSpead2RxStage;
         auto now = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> diff = now-start;
         double bits_received = ((double)numPacketsReceived*NUM_TIME_SAMPLES*NUM_CHANNELS_PER_XENGINE*NUM_POLLS*2*8);
         std::cout <<std::fixed<<std::setprecision(2)<< bits_received/1000/1000/1000 << " Gbits received in "<<diff.count()<<" seconds. Data Rate: " <<bits_received/1000/1000/1000/diff.count() << " Gbps" << std::endl;
-        std::cout << "Spead2Rx    Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.Spead2Stage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << (uint)pipelineCounts.Spead2Stage - prevSpead2Stage <<std::endl
+        std::cout << "Spead2Rx    Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.Spead2RxStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << (uint)pipelineCounts.Spead2RxStage - prevSpead2RxStage <<std::endl
                     << "Buffer      Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.BufferStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.BufferStage - prevBufferStage)*64*ARMORTISER_SIZE <<std::endl
                     << "Reorder     Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.ReorderStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.ReorderStage - prevReorderStage)*64 <<std::endl
                     << "GPUWrapper  Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.GPUWRapperStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.GPUWRapperStage - prevGPUWrapperStage)*64 <<std::endl
+                    << "Spead2Tx    Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.Spead2TxStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.Spead2TxStage - prevSpead2TxStage)*64*1600 <<std::endl
                     << std::endl;
 
         if((pipelineCounts.BufferStage-prevBufferStage) == 0){
@@ -82,10 +92,11 @@ int main(int argc, char** argv){
             break;
         }
 
-        prevSpead2Stage = pipelineCounts.Spead2Stage;
+        prevSpead2RxStage = pipelineCounts.Spead2RxStage;
         prevBufferStage = pipelineCounts.BufferStage;
         prevReorderStage = pipelineCounts.ReorderStage;
         prevGPUWrapperStage = pipelineCounts.GPUWRapperStage;
+        prevSpead2TxStage = pipelineCounts.Spead2TxStage;
 
         start=now;
 
