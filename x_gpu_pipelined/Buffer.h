@@ -2,6 +2,7 @@
 #include "global_definitions.h"
 #include <cstdio>
 #include "tbb/flow_graph.h"
+#include <mutex>
 
 #ifndef _BUFFER_H
 #define _BUFFER_H
@@ -17,6 +18,7 @@ class Buffer{
     private:
         std::deque<boost::shared_ptr<BufferPacket> > buffer;
         uint64_t first_timestamp;
+        //std::mutex lock;
         
 };
 

@@ -6,6 +6,8 @@
 Spead2Rx::Spead2Rx(multi_node * nextNode): worker(),stream(worker, spead2::BUG_COMPAT_PYSPEAD_0_5_2),n_complete(0),endpoint(boost::asio::ip::address_v4::any(), 8888),nextNode(nextNode){
     stream.addNextNodePointer(nextNode);
     stream.emplace_reader<spead2::recv::udp_reader>(endpoint, spead2::recv::udp_reader::default_max_size, 8 * 1024 * 1024);
+    outPacketArmortiser = boost::make_shared<Spead2RxPacketWrapper>();
+    stream.addPacketArmortiser(outPacketArmortiser);
 }
 
 /*boost::shared_ptr<StreamObject> Spead2Rx::receive_packet(){
@@ -66,6 +68,7 @@ boost::shared_ptr<StreamObject> Spead2Rx::process_heap(boost::shared_ptr<spead2:
         }
         return boost::make_shared<Spead2RxPacket>(timestamp,false,frequency,fengId,payloadPtr_p,fheap);
     }else{
+        std::cout << "Wabadabadoo" << std::endl;
         return boost::shared_ptr<Spead2RxPacket>(nullptr);
     }
 }
@@ -86,11 +89,17 @@ void Spead2Rx::trivial_stream::heap_ready(spead2::recv::live_heap &&heap)
             throw "End of Spead stream";
           }
           pipelineCounts.Spead2Stage++;
-          //std::cout << "asd" << std::endl;
-          if(!nextNodeNested->try_put(spead2RxPacket)){
-            std::cout << "Packet Failed to be passed to buffer class" << std::endl;
+          outPacketArmortiser->addPacket(spead2RxPacket);
+          if(outPacketArmortiser->getArmortiserSize() >= NUM_ANTENNAS*ARMORTISER_SIZE){
+            if(!nextNodeNested->try_put(outPacketArmortiser)){
+              std::cout << "Packet Failed to be passed to buffer class" << std::endl;
+            }
+            outPacketArmortiser = boost::make_shared<Spead2RxPacketWrapper>();
           }
         }
+        //accessLock.lock();
+        //nextNodeNested->try_put(boost::make_shared<StreamObject>(false));
+        //accessLock.unlock();
     }
 }
 
@@ -109,4 +118,8 @@ void Spead2Rx::trivial_stream::join()
 
 void Spead2Rx::trivial_stream::addNextNodePointer(multi_node * nextNode){
     this->nextNodeNested=nextNode;
+}
+
+void Spead2Rx::trivial_stream::addPacketArmortiser(boost::shared_ptr<Spead2RxPacketWrapper> outPacketArmortiser){
+    this->outPacketArmortiser = outPacketArmortiser;
 }

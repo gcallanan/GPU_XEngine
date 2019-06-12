@@ -13,6 +13,7 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
         boost::shared_ptr<ReorderPacket> outPacket = boost::make_shared<ReorderPacket>(inPacket->getTimestamp(),false,inPacket->getFrequency(),xGpuBuffer);
      
         #ifdef DP4A
+        
         std::cout << "Built with DP4A, DP4A not yet implemented" << std::endl;
         throw "Built with DP4A, DP4A not yet implemented";
         #else
@@ -45,9 +46,10 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
         }
         #endif
         //std::cout << std::hex <<outPacket->getTimestamp() << std::endl;
-        pipelineCounts.ReorderStage++;
+        
         if(!std::get<0>(op).try_put(boost::dynamic_pointer_cast<StreamObject>(outPacket))){
-            std::cout << "Packet failed to be passed to GPU class" << std::endl;
+            //std::cout << "Packet failed to be passed to GPU class" << std::endl;
         }
     }
+    pipelineCounts.ReorderStage++;
 }

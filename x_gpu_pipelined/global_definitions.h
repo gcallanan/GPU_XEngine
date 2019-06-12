@@ -17,6 +17,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include "xgpu.h"
+#include <atomic>
 
 //Global Defines
 #define NUM_ANTENNAS 64
@@ -28,7 +29,8 @@
 #define NUM_BASELINES (QUADRANT_SIZE*4)
 
 #define BUFFER_SIZE 20
-#define DEFAULT_ACCUMULATIONS_THRESHOLD 1632*4
+#define DEFAULT_ACCUMULATIONS_THRESHOLD ((int)(1632*1.2))
+#define ARMORTISER_SIZE 10
 
 //Global Structs
 
@@ -105,21 +107,29 @@ typedef struct XGpuInputBufferPacketStruct{
     int offset;
 } XGpuInputBufferPacket;
 
+typedef struct XGpuOutputBufferPacketStruct{
+    uint8_t * data_ptr;
+    int offset;
+} XGpuOutputBufferPacket;
+
 int getBaselineOffset(int ant0, int ant1);
 
 void displayBaseline(BaselineProducts_out* XGpuPacketOut, int i, int j);
 
+#define DEFAULT_OUTPUT_BUFFERS_THRESHOLD 4
+
 class XGpuBuffers{
     public:
-        XGpuBuffers(): lockedLocations(0),mutex_array(new std::mutex[DEFAULT_ACCUMULATIONS_THRESHOLD]){
+        XGpuBuffers(): lockedLocations_CpuToGpu(0),mutex_array_CpuToGpu(new std::mutex[DEFAULT_ACCUMULATIONS_THRESHOLD]),mutex_array_GpuToCpu(new std::mutex[DEFAULT_OUTPUT_BUFFERS_THRESHOLD]),accessLock_CpuToGpu(),accessLock_GpuToCpu(){
           xgpuInfo(&xgpu_info);
           int xgpu_error = 0;
-              
+          index_CpuToGpu=0;
+          lockedLocations_CpuToGpu=0;
           context.array_len = xgpu_info.vecLength*DEFAULT_ACCUMULATIONS_THRESHOLD;
-          context.matrix_len = xgpu_info.matLength;
+          context.matrix_len = xgpu_info.matLength*DEFAULT_OUTPUT_BUFFERS_THRESHOLD;
           context.array_h = (ComplexInput*)malloc(context.array_len*sizeof(ComplexInput));
           context.matrix_h = (Complex*)malloc(context.matrix_len*sizeof(Complex));
-
+          std::cout << ((float)(context.array_len*sizeof(ComplexInput)))/1024/1024/1024 << " GB of gpu storage allocated." << std::endl; 
           xgpu_error = xgpuInit(&context, 0);
           if(xgpu_error) {
               std::cout << "xgpuInit returned error code: " << xgpu_error << std::endl;
@@ -130,46 +140,66 @@ class XGpuBuffers{
           return &context;
         }
 
-        XGpuInputBufferPacket allocateMemory(){
-          mutex_array[index].lock();
-          //std::cout << index << " grabbed" << std::endl;
+        //NOTE: I am concerned that the interaction between the wrap around of the index variable and the mutex mechanism will cause a problem - it might make more sense just to have single lock blocking this entire function
+        XGpuInputBufferPacket allocateMemory_CpuToGpu(){
+          int currentIndex = index_CpuToGpu++ % DEFAULT_ACCUMULATIONS_THRESHOLD;
+          //std::cout << currentIndex << " attempted grab" << std::endl;
+          mutex_array_CpuToGpu[currentIndex].lock();
+          //std::cout << currentIndex << " grabbed" << std::endl;
           XGpuInputBufferPacket structOut;
-          structOut.data_ptr = (uint8_t*)(context.array_h + xgpu_info.vecLength*index);
-          structOut.offset = index;
-          if(index < DEFAULT_ACCUMULATIONS_THRESHOLD - 1){
-            index++;
-          }else{
-            index=0;
-          }
-          lockedLocations++;
+          structOut.data_ptr = (uint8_t*)(context.array_h + xgpu_info.vecLength*currentIndex);
+          structOut.offset = currentIndex;
+          lockedLocations_CpuToGpu++;
           return structOut;
         }
 
-        void freeMemory(int blockToFree){
-          mutex_array[blockToFree].unlock();
+        void freeMemory_CpuToGpu(int blockToFree){
+          mutex_array_CpuToGpu[blockToFree].unlock();
           //std::cout << blockToFree << " freed" << std::endl;
-          lockedLocations--;
+          lockedLocations_CpuToGpu--;
         }
 
-        
 
+        XGpuOutputBufferPacket allocateMemory_GpuToCpu(){
+          int currentIndex = index_GpuToCpu++ % DEFAULT_OUTPUT_BUFFERS_THRESHOLD;
+          //std::cout << currentIndex << " attempted grab" << std::endl;
+          mutex_array_GpuToCpu[currentIndex].lock();
+          //std::cout << currentIndex << " grabbed" << std::endl;
+          XGpuOutputBufferPacket structOut;
+          structOut.data_ptr = (uint8_t*)(context.matrix_h + xgpu_info.matLength *currentIndex);
+          structOut.offset = currentIndex;
+          lockedLocations_GpuToCpu++;
+          return structOut;
+        }
+
+        void freeMemory_GpuToCpu(int blockToFree){
+          //std::cout << blockToFree << " ============================" << std::endl;
+          mutex_array_GpuToCpu[blockToFree].unlock();
+          //std::cout << blockToFree << " freed" << std::endl;
+          lockedLocations_GpuToCpu--;
+        }
 
     private:
         XGPUInfo xgpu_info;
-        boost::shared_ptr<std::mutex[]> mutex_array;
-        int lockedLocations;
-        int index = 0;
+        boost::shared_ptr<std::mutex[]> mutex_array_CpuToGpu;
+        boost::shared_ptr<std::mutex[]> mutex_array_GpuToCpu;
+        std::atomic<int> lockedLocations_CpuToGpu;
+        std::atomic<int> index_CpuToGpu;
+        std::atomic<int> lockedLocations_GpuToCpu;
+        std::atomic<int> index_GpuToCpu;
         XGPUContext context;
-
-        
+        std::mutex accessLock_CpuToGpu;
+        std::mutex accessLock_GpuToCpu;
 };
+
+
 
 class StreamObject{
     public:
         StreamObject(uint64_t timestamp_u64,bool eos,uint64_t frequency): timestamp_u64(timestamp_u64),eos(eos),frequency(frequency){
 
         }
-        StreamObject(bool eos): eos(eos){
+        StreamObject(bool eos): eos(eos),timestamp_u64(0),frequency(0){
 
         }
         uint64_t getTimestamp(){
@@ -184,10 +214,18 @@ class StreamObject{
         virtual bool isEmpty(){
           return true;
         }
+        friend bool operator<(StreamObject& lhs, StreamObject& rhs)
+        {
+          return lhs.getTimestamp() < rhs.getTimestamp();
+        }
+        friend bool operator>(StreamObject& lhs, StreamObject& rhs)
+        {
+          return lhs.getTimestamp() > rhs.getTimestamp();
+        }
     protected:
         uint64_t timestamp_u64;
-        bool eos;
-        uint64_t frequency;
+        const bool eos;
+        const uint64_t frequency;
 };
 
 class Spead2RxPacket: public StreamObject
@@ -196,6 +234,9 @@ class Spead2RxPacket: public StreamObject
         Spead2RxPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,uint64_t fEngineId,uint8_t *payloadPtr_p, boost::shared_ptr<spead2::recv::heap>fheap): StreamObject(timestamp_u64,eos,frequency),fEngineId(fEngineId),fheap(fheap),payloadPtr_p(payloadPtr_p){
 
         }
+        //Spead2RxPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,uint64_t fEngineId): StreamObject(timestamp_u64,eos,frequency),fEngineId(fEngineId){
+        //  fheap = nullptr;
+        //}
         uint64_t getFEngineId(){
           return fEngineId;
         }
@@ -270,9 +311,29 @@ class BufferPacket: public virtual StreamObject{
         std::vector<uint8_t*> data_pointers_v;
 };
 
+class Spead2RxPacketWrapper: public virtual StreamObject{
+    public:
+      Spead2RxPacketWrapper(): StreamObject(false){
+      }
+      void addPacket(boost::shared_ptr<StreamObject> packetIn){
+        packets.push_back(packetIn);
+      }
+      boost::shared_ptr<StreamObject> removePacket(){
+        boost::shared_ptr<StreamObject> outPacket = packets.front();
+        packets.pop_front();
+        return outPacket;
+      }
+      int getArmortiserSize(){
+        return packets.size();
+      }
+    private:
+      std::deque<boost::shared_ptr<StreamObject>> packets;
+
+};
+
 class ReorderPacket: public virtual StreamObject{
     public:
-        ReorderPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,boost::shared_ptr<XGpuBuffers> xGpuBuffer): StreamObject(timestamp_u64,eos,frequency),xGpuBuffer(xGpuBuffer),packetData(xGpuBuffer->allocateMemory()){
+        ReorderPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,boost::shared_ptr<XGpuBuffers> xGpuBuffer): StreamObject(timestamp_u64,eos,frequency),xGpuBuffer(xGpuBuffer),packetData(xGpuBuffer->allocateMemory_CpuToGpu()){
         
         }
         uint8_t * getDataPointer(){
@@ -282,8 +343,8 @@ class ReorderPacket: public virtual StreamObject{
             return packetData.offset;
         }
         ~ReorderPacket(){
-          //std::cout << "Cleaning Packet " << std::endl;
-          xGpuBuffer->freeMemory(packetData.offset);
+          //std::cout << "Cleaning Packet: "<< packetData.offset << std::endl;
+          xGpuBuffer->freeMemory_CpuToGpu(packetData.offset);
         }
     private:
         XGpuInputBufferPacket packetData; 
@@ -293,22 +354,40 @@ class ReorderPacket: public virtual StreamObject{
 
 class GPUWrapperPacket: public virtual StreamObject{
     public:
-        GPUWrapperPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency): StreamObject(timestamp_u64,eos,frequency), packetData(new BaselineProducts_out[NUM_CHANNELS_PER_XENGINE*NUM_BASELINES*2]){
+        GPUWrapperPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,boost::shared_ptr<XGpuBuffers> xGpuBuffer): StreamObject(timestamp_u64,eos,frequency),xGpuBuffer(xGpuBuffer), packetData(xGpuBuffer->allocateMemory_GpuToCpu()){
         
         }
-        BaselineProducts_out * getDataPointer(){
-            return packetData.get(); 
+        uint8_t * getDataPointer(){
+            return packetData.data_ptr; 
+        }
+        int getBufferOffset(){
+            return packetData.offset;
+        }
+        ~GPUWrapperPacket(){
+          //std::cout << "Destructor Called " << packetData.offset << std::endl;
+          xGpuBuffer->freeMemory_GpuToCpu(packetData.offset);
         }
     private:
-        boost::shared_ptr<BaselineProducts_out[]> packetData; 
+        XGpuOutputBufferPacket packetData; 
+        boost::shared_ptr<XGpuBuffers> xGpuBuffer;
 
 };
 
 
 typedef tbb::flow::multifunction_node<boost::shared_ptr<StreamObject>, tbb::flow::tuple<boost::shared_ptr<StreamObject> > > multi_node;
 
+struct StreamObjectPointerCompare
+{
+    bool operator()(const boost::shared_ptr<StreamObject>& lhs, const boost::shared_ptr<StreamObject>& rhs)
+    {
+        return *lhs > *rhs;
+    }
+};
+
+
 //Global Variables;
 extern PipelineCounts pipelineCounts;
 extern bool debug;
+
 
 #endif
