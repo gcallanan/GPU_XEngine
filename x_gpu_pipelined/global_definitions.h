@@ -368,6 +368,7 @@ class GPUWrapperPacket: public virtual StreamObject{
           //std::cout << "Destructor Called " << packetData.offset << std::endl;
           xGpuBuffer->freeMemory_GpuToCpu(packetData.offset);
         }
+        
     private:
         XGpuOutputBufferPacket packetData; 
         boost::shared_ptr<XGpuBuffers> xGpuBuffer;
@@ -389,6 +390,7 @@ struct StreamObjectPointerCompare
 //Global Variables;
 extern PipelineCounts pipelineCounts;
 extern bool debug;
+extern int speadTxSuccessCount;
 
 
 #endif

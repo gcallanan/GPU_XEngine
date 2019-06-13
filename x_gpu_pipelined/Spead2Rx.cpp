@@ -3,7 +3,7 @@
 #include <boost/make_shared.hpp>
 
 
-Spead2Rx::Spead2Rx(multi_node * nextNode): worker(),stream(worker, spead2::BUG_COMPAT_PYSPEAD_0_5_2),n_complete(0),endpoint(boost::asio::ip::address_v4::any(), 8888),nextNode(nextNode){
+Spead2Rx::Spead2Rx(multi_node * nextNode): worker(),stream(worker),n_complete(0),endpoint(boost::asio::ip::address_v4::any(), 8888),nextNode(nextNode){
     stream.addNextNodePointer(nextNode);
     stream.emplace_reader<spead2::recv::udp_reader>(endpoint, spead2::recv::udp_reader::default_max_size, 8 * 1024 * 1024);
     outPacketArmortiser = boost::make_shared<Spead2RxPacketWrapper>();

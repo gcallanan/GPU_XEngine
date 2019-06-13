@@ -70,7 +70,7 @@ int main(int argc, char** argv){
     auto start = std::chrono::high_resolution_clock::now();
     //while(spead2RxPacket==nullptr || !spead2RxPacket->isEOS()){
     while(true){
-        std::this_thread::sleep_for (std::chrono::seconds(10));
+        std::this_thread::sleep_for (std::chrono::seconds(500));
 
         //Reporting Code
         uint numPacketsReceived = (uint)pipelineCounts.Spead2RxStage - prevSpead2RxStage;
