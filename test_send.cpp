@@ -29,6 +29,8 @@
 #include <mutex>
 #include <iomanip>
 #include <atomic>
+#include <boost/program_options.hpp>
+#include <string>
 
 #define N_ANTS 64
 #define N_CHANNELS 4096
@@ -45,24 +47,43 @@ SampleDataFormat sample_data_format = two_ant_test;
 #define ANTENNA 3
 
 //two_ant_test specific variables
-#define ANTENNA1 16
-#define ANTENNA2 58  
+#define ANTENNA1 17
+#define ANTENNA2 44  
 
-#define REPORTING_SPACE 20000
+#define REPORTING_SPACE 10000
 
 std::atomic<int> numSent;
 
 using boost::asio::ip::udp;
 std::mutex m;
 auto start = std::chrono::high_resolution_clock::now();
-int main()
+int main(int argc, char** argv)
 {
-    spead2::thread_pool tp;
+    namespace po = boost::program_options;  
+    po::options_description desc("Allowed options");
+    desc.add_options()
+        ("help", "produce help message")
+        ("txport", po::value<std::string>()->default_value("8888"), "Set transmitter port")
+    ;
+
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm); 
+
+    if (vm.count("help")){
+        std::cout << desc << "\n";
+        return 1;
+    }
+
+    std::string txPort = vm["txport"].as<std::string>();
+
+
+    spead2::thread_pool tp(10);
     udp::resolver resolver(tp.get_io_service());
-    udp::resolver::query query("127.0.0.1", "8888");
+    udp::resolver::query query("127.0.0.1", txPort);
     auto it = resolver.resolve(query);
     spead2::send::udp_stream stream(tp.get_io_service(), *it, spead2::send::stream_config(9000, 0,64,64),100000);
-    spead2::flavour f(spead2::maximum_version, 64, 48, spead2::BUG_COMPAT_PYSPEAD_0_5_2);
+    spead2::flavour f(spead2::maximum_version, 64, 48);
    
     //Create Descriptors
     spead2::send::heap h_desc(f);
@@ -107,75 +128,86 @@ int main()
     std::int8_t feng_raw[N_ANTS][N_CHANNELS_PER_X_ENGINE*TIME_SAMPLES_PER_PACKET*N_POL*2] = {};
     spead2::send::heap h[N_ANTS];
 
-    for (size_t j = 0; j < N_ANTS; j++)
-    {
-        switch(sample_data_format){
-            case one_ant_test:
-            {
-                for(int i = 0; i<16*256*2*2;i++){
-                    if(j == ANTENNA){
-                        if(i%2==0){
-                            feng_raw[j][i] = (int8_t)1;
-                        }else{
-                            feng_raw[j][i] = (int8_t)2;
-                        }    
-                    }else{
-                        feng_raw[j][i] = (int8_t)0;
-                    }   
-                }
-            }
-            break;
-            case two_ant_test:
-            {
-                for(int i = 0; i<16*256*2*2;i++){
-                    if(j == ANTENNA1){
-                        if((i+0)%2==0 && (i+0)%4 == 0){
-                            feng_raw[j][i] = (int8_t)1;
-                        }else if((i+1)%2==0 && (i+1)%4 == 0){
-                            feng_raw[j][i] = (int8_t)2;
-                        }else if((i+0)%2==0 && (i+0)%4 != 0){
-                            feng_raw[j][i] = (int8_t)3;
-                        }else{
-                            feng_raw[j][i] = (int8_t)4;
-                        }        
-                    }else if (j == ANTENNA2)
-                    {
-                        if((i+0)%2==0 && (i+0)%4 == 0){
-                            feng_raw[j][i] = (int8_t)5;
-                        }else if((i+1)%2==0 && (i+1)%4 == 0){
-                            feng_raw[j][i] = (int8_t)6;
-                        }else if((i+0)%2==0 && (i+0)%4 != 0){
-                            feng_raw[j][i] = (int8_t)7;
-                        }else{
-                            feng_raw[j][i] = (int8_t)8;
-                        }  
-                    }else{
-                        feng_raw[j][i] = (int8_t)0;
-                    }   
-                }
-            }
-            break;
-            case all_zero:
-            {
-                for(int i = 0; i<16*256*2*2;i++){
-                    feng_raw[j][i] = (int8_t) (0xff & 0);
-                }
-            }
-            break;
-            case ramp:
-            default:
-            {
-                for(int i = 0; i<16*256*2*2;i++){
-                    feng_raw[j][i] = (int8_t) (0xff & i);
-                }
-            }
-            break;
-        }
-    }
-    
+    int8_t array_temp[8] = {-8,-2,-1,1,2,4,6,8};
+    int arrayPos = 0;
+    bool regen = 1;
 
     for (size_t k = 1; k < NUM_PACKETS; k++)
     {
+        if(regen == 1){
+            regen=0;
+            for (size_t j = 0; j < N_ANTS; j++)
+            {
+                switch(sample_data_format){
+                    case one_ant_test:
+                    {
+                        for(int i = 0; i<16*256*2*2;i++){
+                            if(j == ANTENNA){
+                                if(i%2==0){
+                                    feng_raw[j][i] = (int8_t)array_temp[arrayPos%8+0];
+                                }else{
+                                    feng_raw[j][i] = (int8_t)array_temp[arrayPos%8+1];
+                                }    
+                            }else{
+                                feng_raw[j][i] = (int8_t)0;
+                            }   
+                        }
+                    }
+                    break;
+                    case two_ant_test:
+                    {
+                        for (size_t f = 0; f < N_CHANNELS_PER_X_ENGINE; f++)
+                        {
+                            for(int i = 0; i<256*2*2;i++){
+                                if(j == ANTENNA1){
+                                    if((i+0)%2==0 && (i+0)%4 == 0){
+                                        feng_raw[j][f*256*2*2 + i] = (int8_t)array_temp[(arrayPos+0+f)%8];
+                                    }else if((i+1)%2==0 && (i+1)%4 == 0){
+                                        feng_raw[j][f*256*2*2+i] = (int8_t)array_temp[(arrayPos+1+f)%8];
+                                    }else if((i+0)%2==0 && (i+0)%4 != 0){
+                                        feng_raw[j][f*256*2*2+i] = (int8_t)array_temp[(arrayPos+2+f)%8];
+                                    }else{
+                                        feng_raw[j][f*256*2*2+i] = (int8_t)array_temp[(arrayPos+4+f)%8];
+                                    }        
+                                }else if (j == ANTENNA2)
+                                {
+                                    if((i+0)%2==0 && (i+0)%4 == 0){
+                                        feng_raw[j][f*256*2*2+i] = (int8_t)array_temp[(arrayPos+3+f)%8];
+                                    }else if((i+1)%2==0 && (i+1)%4 == 0){
+                                        feng_raw[j][f*256*2*2+i] = (int8_t)array_temp[(arrayPos+5+f)%8];
+                                    }else if((i+0)%2==0 && (i+0)%4 != 0){
+                                        feng_raw[j][f*256*2*2+i] = (int8_t)array_temp[(arrayPos+6+f)%8];
+                                    }else{
+                                        feng_raw[j][f*256*2*2+i] = (int8_t)array_temp[(arrayPos+7+f)%8];
+                                    }  
+                                }else{
+                                    feng_raw[j][i] = (int8_t)0;
+                                }   
+                            }
+                        }
+                    }
+                    break;
+                    case all_zero:
+                    {
+                        for(int i = 0; i<16*256*2*2;i++){
+                            feng_raw[j][i] = (int8_t) (0xff & 0);
+                        }
+                    }
+                    break;
+                    case ramp:
+                    default:
+                    {
+                        for(int i = 0; i<16*256*2*2;i++){
+                            feng_raw[j][i] = (int8_t) (0xff & i);
+                        }
+                    }
+                    break;
+                }
+            }
+            //std::cout << (int)array_temp[(arrayPos+0)%8] << " " << (int)array_temp[(arrayPos+3)%8] << std::endl;
+            arrayPos++;
+        }
+
         /* code */ 
         numSent=0; 
         for(int j = 0; j<N_ANTS; j++){ 
@@ -211,6 +243,7 @@ int main()
                 }  
             });
             if(k%REPORTING_SPACE==0 && j == 0){
+                regen=1;
                 auto now = std::chrono::high_resolution_clock::now();
                 std::chrono::duration<double> diff = now-start;
                 start=now;
