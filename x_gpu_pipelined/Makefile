@@ -2,6 +2,8 @@
 # (usually sizing for a specific project)
 -include Makefile.local
 
+#CFLAGS += -Xcompiler -ggdb
+
 NPOL=2
 NSTATION=64
 NFREQUENCY=16
@@ -47,7 +49,7 @@ else
 LFLAGS = -L$(CUDA_LIBDIR) -L. -lcudart
 endif
 
-LFLAGS += -lboost_system -lspead2 -Xcompiler -lpthread -lpcap -lrdmacm -libverbs -ltbb
+LFLAGS += -lboost_system -lspead2 -Xcompiler -lpthread -lpcap -lrdmacm -libverbs -ltbb -lboost_program_options
 
 RPATH = -Xlinker -rpath,'$${ORIGIN}:$${ORIGIN}/../lib'
 LIBXGPU = libxgpu.so

@@ -1,11 +1,11 @@
 #include "SpeadTx.h"
 
-std::mutex temp;
+std::mutex accessLock;
 
-SpeadTx::SpeadTx(){
+SpeadTx::SpeadTx(std::string txPort){
     tp = boost::make_shared<spead2::thread_pool>();
     resolver = boost::make_shared<boost::asio::ip::udp::resolver>(tp->get_io_service());
-    query = boost::make_shared<boost::asio::ip::udp::resolver::query>("127.0.0.1", "8889");
+    query = boost::make_shared<boost::asio::ip::udp::resolver::query>("127.0.0.1", txPort);
     auto it = resolver->resolve(*query);
     stream = boost::make_shared<spead2::send::udp_stream>(tp->get_io_service(), *it, spead2::send::stream_config(9000, 0));
     f = boost::make_shared<spead2::flavour>(spead2::maximum_version, 64, 48);
@@ -49,12 +49,12 @@ void SpeadTx::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
         h.add_item(0x4103,inPacket_cast->getFrequency());
         h.add_item(0x1600,inPacket_cast->getTimestamp());
         h.add_item(0x1800,&xengRaw_p,sizeof(xengRaw_p), true);
-        temp.lock();
+        accessLock.lock();
         //std::cout<<"a"<<std::endl;
         stream->async_send_heap(h, [] (const boost::system::error_code &ec, spead2::item_pointer_t bytes_transferred)
         {
             //std::cout<<"b"<<std::endl;
-            temp.unlock();
+            accessLock.unlock();
             if (ec){
                 std::cerr << "Transmit Error after " << speadTxSuccessCount << " succesful transmits. Message: "<< ec.message() << '\n';
                 speadTxSuccessCount = 0;
@@ -67,9 +67,9 @@ void SpeadTx::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
             //this->clearArray();
             //std::cout << "b" << std::endl;
         });
-        temp.lock();
+        accessLock.lock();
         //std::cout<<"c"<<std::endl;
-        temp.unlock();
+        accessLock.unlock();
         //std::cout<<"d"<<std::endl;
     }
     pipelineCounts.Spead2TxStage++;

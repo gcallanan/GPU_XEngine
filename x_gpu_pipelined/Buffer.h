@@ -8,7 +8,6 @@
 #define _BUFFER_H
 
 #define PACKET_THRESHOLD_BEFORE_SYNC 20 
-#define TIMESTAMP_JUMP (NUM_TIME_SAMPLES*2*FFT_SIZE)
 
 class Buffer{
     public:

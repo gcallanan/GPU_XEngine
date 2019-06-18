@@ -2,8 +2,9 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
+#define NUM_THREADS 1
 
-Spead2Rx::Spead2Rx(multi_node * nextNode): worker(),stream(worker),n_complete(0),endpoint(boost::asio::ip::address_v4::any(), 8888),nextNode(nextNode){
+Spead2Rx::Spead2Rx(multi_node * nextNode, int rxPort): worker(NUM_THREADS),stream(worker),n_complete(0),endpoint(boost::asio::ip::address_v4::any(), rxPort),nextNode(nextNode){
     stream.addNextNodePointer(nextNode);
     stream.emplace_reader<spead2::recv::udp_reader>(endpoint, spead2::recv::udp_reader::default_max_size, 8 * 1024 * 1024);
     outPacketArmortiser = boost::make_shared<Spead2RxPacketWrapper>();
@@ -80,6 +81,7 @@ int Spead2Rx::getNumCompletePackets(){
 void Spead2Rx::trivial_stream::heap_ready(spead2::recv::live_heap &&heap)
 {
     //std::cout << "Got heap " << heap.get_cnt();
+    pipelineCounts.heapsReceived++;
     if (heap.is_complete())
     {   
         boost::shared_ptr<StreamObject> spead2RxPacket = process_heap(boost::make_shared<spead2::recv::heap>(boost::move(heap)));
@@ -100,6 +102,8 @@ void Spead2Rx::trivial_stream::heap_ready(spead2::recv::live_heap &&heap)
         //accessLock.lock();
         //nextNodeNested->try_put(boost::make_shared<StreamObject>(false));
         //accessLock.unlock();
+    }else{
+      pipelineCounts.heapsDropped++;
     }
 }
 

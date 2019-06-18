@@ -27,7 +27,7 @@ class Spead2Rx{
 
     };
     public:
-        Spead2Rx(multi_node * nextNode);
+        Spead2Rx(multi_node * nextNode,int rxPort);
         //boost::shared_ptr<StreamObject> receive_packet();
         int getNumCompletePackets();
     private:

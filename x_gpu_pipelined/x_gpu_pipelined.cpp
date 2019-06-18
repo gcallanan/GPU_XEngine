@@ -15,6 +15,8 @@
 #include <queue>
 #include <chrono>
 #include <iomanip>
+#include <boost/program_options.hpp>
+#include <string>
 
 //Local Includes
 #include "global_definitions.h"
@@ -34,6 +36,27 @@
 /// \param  argv An argument vector of the command line arguments
 /// \return an integer 0 upon exit success
 int main(int argc, char** argv){
+    //Set up command line arguments
+    namespace po = boost::program_options;  
+    po::options_description desc("Allowed options");
+    desc.add_options()
+        ("help", "produce help message")
+        ("rxport", po::value<int>()->default_value(8888), "Set receiver port")
+        ("txport", po::value<std::string>()->default_value("9888"), "Set transmitter port")
+    ;
+
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm); 
+
+    if (vm.count("help")){
+        std::cout << desc << "\n";
+        return 1;
+    }
+
+    std::string txPort = vm["txport"].as<std::string>();
+    int rxPort = vm["rxport"].as<int>();
+    //Create flow graph
     tbb::flow::graph g;
 
     //Multithreading Information
@@ -42,6 +65,8 @@ int main(int argc, char** argv){
     pipelineCounts.ReorderStage=1;
     pipelineCounts.GPUWRapperStage=1;
     pipelineCounts.Spead2TxStage=1;
+    pipelineCounts.heapsDropped=0;
+    pipelineCounts.heapsReceived=0;
 
     int prevSpead2RxStage=0;//.load(pipelineCounts.Spead2Stage);
     int prevBufferStage=0;//.load(pipelineCounts.BufferStage);
@@ -54,8 +79,8 @@ int main(int argc, char** argv){
     multi_node bufferNode(g,1,Buffer());
     multi_node reorderNode(g,tbb::flow::unlimited,Reorder(xGpuBuffer));
     multi_node gpuNode(g,1,GPUWrapper(xGpuBuffer));
-    multi_node txNode(g,1,SpeadTx());
-    Spead2Rx rx(&bufferNode);
+    multi_node txNode(g,1,SpeadTx(txPort));
+    Spead2Rx rx(&bufferNode,rxPort);
     
     //Construct Edges
     tbb::flow::make_edge(tbb::flow::output_port<0>(bufferNode), reorderNode);
@@ -70,7 +95,7 @@ int main(int argc, char** argv){
     auto start = std::chrono::high_resolution_clock::now();
     //while(spead2RxPacket==nullptr || !spead2RxPacket->isEOS()){
     while(true){
-        std::this_thread::sleep_for (std::chrono::seconds(500));
+        std::this_thread::sleep_for (std::chrono::seconds(5));
 
         //Reporting Code
         uint numPacketsReceived = (uint)pipelineCounts.Spead2RxStage - prevSpead2RxStage;
@@ -83,6 +108,7 @@ int main(int argc, char** argv){
                     << "Reorder     Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.ReorderStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.ReorderStage - prevReorderStage)*64 <<std::endl
                     << "GPUWrapper  Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.GPUWRapperStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.GPUWRapperStage - prevGPUWrapperStage)*64 <<std::endl
                     << "Spead2Tx    Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.Spead2TxStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.Spead2TxStage - prevSpead2TxStage)*64*1600 <<std::endl
+                    << "Incomplete Heaps: "<< (uint)pipelineCounts.heapsDropped <<" heaps out of "<< (uint)pipelineCounts.heapsReceived << ". Drop Rate: "<<std::setprecision(4) << float(pipelineCounts.heapsDropped)/float(pipelineCounts.heapsReceived)*100 <<" %"<< std::endl
                     << std::endl;
 
         if((pipelineCounts.BufferStage-prevBufferStage) == 0){

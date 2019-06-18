@@ -38,8 +38,8 @@ class SpeadTx{
             int32_t * arrayPtr;
     };*/
     public:
-        SpeadTx();
-        void operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::output_ports_type &op);      
+        SpeadTx(std::string txPort);
+        void operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::output_ports_type &op);     
     private:
         boost::shared_ptr<spead2::thread_pool> tp;
         boost::shared_ptr<boost::asio::ip::udp::resolver> resolver;
@@ -47,7 +47,6 @@ class SpeadTx{
         boost::shared_ptr<boost::asio::ip::basic_resolver_iterator<boost::asio::ip::udp>> it;
         boost::shared_ptr<spead2::send::udp_stream> stream;
         boost::shared_ptr<spead2::flavour> f;
-        //int32_t * xengRaw_p;//4 For the number of products per baseline and 2 for real/complexity;
 };
 
 #endif

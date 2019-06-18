@@ -2,6 +2,8 @@
 #include "global_definitions.h"
 #include <iostream>
 
+
+
 Buffer::Buffer(): first_timestamp(0){
     for (size_t i = 0; i < BUFFER_SIZE; i++)
     {
@@ -34,6 +36,12 @@ void Buffer::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::ou
             // std::cout << "e Timestamp: " << packet_timestamp<< " First Timestamp " << first_timestamp<<std::endl;
             }
             //Check that correct timestamp is propegated
+
+            if((packet_timestamp - first_timestamp)/TIMESTAMP_JUMP > RESYNC_LIMIT){
+                std::cout << "Timestamp completly off, resync triggered in Buffer class" << std::endl;
+                first_timestamp = 0;
+            }
+
             if(first_timestamp>packet_timestamp){
                 std::cout << "Timestamp smaller than minimum received in Buffer class" << std::endl;
                 throw "Timestamp smaller than minimum received in Buffer class";
@@ -63,7 +71,7 @@ void Buffer::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::ou
                             //std::cout << "c" << std::endl;
                         }
                         if(!std::get<0>(op).try_put(boost::dynamic_pointer_cast<StreamObject>(buffer[0]))){
-                            std::cout << "Packet Failed to be passed to reorder class" << std::endl;
+                        //    std::cout << "Packet Failed to be passed to reorder class" << std::endl;
                         }
                     }
                     buffer.pop_front();

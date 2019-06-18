@@ -28,8 +28,16 @@
 #define QUADRANT_SIZE ((NUM_ANTENNAS/2+1)*(NUM_ANTENNAS/4))
 #define NUM_BASELINES (QUADRANT_SIZE*4)
 
+
+//Buffer Specific Packets
 #define BUFFER_SIZE 20
+#define RESYNC_LIMIT 200
+#define TIMESTAMP_JUMP (NUM_TIME_SAMPLES*2*FFT_SIZE)
+
+//X Engine Specific Variables
 #define DEFAULT_ACCUMULATIONS_THRESHOLD ((int)(1632*1.2))
+
+//Reorder Specific Variables
 #define ARMORTISER_SIZE 10
 
 //Global Structs
@@ -43,6 +51,8 @@ typedef struct PipelineCountsStruct{
    std::atomic<int> ReorderStage;
    std::atomic<int> GPUWRapperStage;
    std::atomic<int> Spead2TxStage;
+   std::atomic<int> heapsDropped;
+   std::atomic<int> heapsReceived;
 } PipelineCounts;
 
 /**
