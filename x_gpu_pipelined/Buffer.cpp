@@ -32,6 +32,7 @@ void Buffer::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::ou
             //std::cout<<"Buffer Block Called"<<std::endl;
             boost::shared_ptr<Spead2RxPacket> inPacket_cast = boost::dynamic_pointer_cast<Spead2RxPacket>(inPacket_pop);
             uint64_t packet_timestamp = inPacket_cast->getTimestamp();
+            
             if(debug){
             // std::cout << "e Timestamp: " << packet_timestamp<< " First Timestamp " << first_timestamp<<std::endl;
             }
@@ -48,9 +49,9 @@ void Buffer::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::ou
             }
 
             int index = (packet_timestamp - first_timestamp)/TIMESTAMP_JUMP;
-            if(debug){
-                //std::cout << "f Index: "<< index <<std::endl;
-            }
+            //if(inPacket_cast->getFEngineId() == 0){
+            //    std::cout << std::hex <<  packet_timestamp << " " << index <<std::endl;;
+            //}
             //std::cout<<(int)index<<" "<<TIMESTAMP_JUMP<<" " << packet_timestamp << " " << first_timestamp << " " << buffer.size()<<std::endl;
             if(index>BUFFER_SIZE+PACKET_THRESHOLD_BEFORE_SYNC){//Packet Far Outside of Range
                 //std::cout << "b" << std::endl;

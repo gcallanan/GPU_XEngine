@@ -29,7 +29,7 @@ NUM_CHANNELS_PER_XENGINE=16
 NUM_BASELINES=2112
 
 ant1 = 17
-ant2 = 44
+ant2 = 17#44
 
 def getBaselineOffset(ant0,ant1):
     if(ant0>ant1):
