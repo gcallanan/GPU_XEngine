@@ -22,14 +22,32 @@ import spead2.send
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
+import argparse
 
 logging.basicConfig(level=logging.INFO)
 
 NUM_CHANNELS_PER_XENGINE=16
 NUM_BASELINES=2112
 
-ant1 = 17
-ant2 = 17#44
+parser = argparse.ArgumentParser(
+    description='Monitor and plot incoming X-Engine stream data.',
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument(
+    '-p', '--rx_port', dest='port', action='store', default=9888, type=int,
+    help='bind to this port to receive X-Engine stream')
+parser.add_argument(
+    '-i', '--ip_address', dest='ip_address', action='store', default="127.0.0.1",
+    help='recieve data from this IP address')
+parser.add_argument(
+    '-x', '--ant1', dest='ant1', action='store', default=17, type=int,
+    help='First antenna to observe')
+parser.add_argument(
+    '-y', '--ant2', dest='ant2', action='store', default=17, type=int,
+    help='Second Antenna to observe')
+args = parser.parse_args()
+
+ant1 = args.ant1
+ant2 = args.ant2
 
 def getBaselineOffset(ant0,ant1):
     if(ant0>ant1):
@@ -59,7 +77,7 @@ descriptor_sent = False
 
 thread_pool_send = spead2.ThreadPool()
 stream_send = spead2.send.UdpStream(
-thread_pool_send, "127.0.0.1", 9888, spead2.send.StreamConfig(rate=1e7))
+thread_pool_send, args.ip_address, args.port, spead2.send.StreamConfig(rate=1e7))
 del thread_pool_send
 
 shape = (16, 2112, 4, 2)

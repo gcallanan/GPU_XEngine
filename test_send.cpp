@@ -39,9 +39,7 @@
 #define N_CHANNELS_PER_X_ENGINE N_CHANNELS/N_ANTS/N_X_ENGINES_PER_ANT
 #define N_POL 2
 #define TIME_SAMPLES_PER_PACKET 256
-#define NUM_PACKETS 10000000
 
-#define DROP_PACKET_THRESHOLD_PERCENT 10
 #define INIT_TIMESTAMP 2111
 #define TIMESTAMP_VARIATION 3
 
@@ -50,10 +48,6 @@ SampleDataFormat sample_data_format = two_ant_test;
 
 //one_ant_test specifications
 #define ANTENNA 3
-
-//two_ant_test specific variables
-#define ANTENNA1 17
-#define ANTENNA2 44  
 
 #define REPORTING_SPACE 10000
 
@@ -68,7 +62,13 @@ int main(int argc, char** argv)
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "produce help message")
-        ("txport", po::value<std::string>()->default_value("8888"), "Set transmitter port")
+        ("tx_port", po::value<std::string>()->default_value("8888"), "Set transmitter port")
+        ("dest_ip", po::value<std::string>()->default_value("127.0.0.1"), "Set destination ip address")
+        ("drop_rate", po::value<std::int32_t>()->default_value(0), "Set packet drop rate in percent(range: 0 to 100)")
+        ("rate_fudge_factor", po::value<std::int32_t>()->default_value(150), "Set delay after each batch of 64 packets.")
+        ("ant1", po::value<std::int32_t>()->default_value(17), "Set 1st Antenna to add non-zero data to.(range: 0 to 63)")
+        ("ant2", po::value<std::int32_t>()->default_value(17), "Set 2nd Antenna to add non-zero data to.(range: 0 to 63)")
+        ("num_packets_total", po::value<std::int32_t>()->default_value(1000000), "Total number of sets of 64 packets to send.")
     ;
 
     po::variables_map vm;
@@ -80,12 +80,29 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    std::string txPort = vm["txport"].as<std::string>();
-
+    std::string txPort = vm["tx_port"].as<std::string>();
+    std::string destIp = vm["dest_ip"].as<std::string>();
+    std::int32_t dropRate = vm["drop_rate"].as<std::int32_t>();
+    if(dropRate < 0 || dropRate >100){
+        std::cout <<  "ERROR: Drop rate set to "<<dropRate<<". Not in range of 0 to 100." << std::endl << "Exiting Program" << std::endl;
+        return -1;
+    }
+    std::int32_t rateFudgeFactor = vm["rate_fudge_factor"].as<std::int32_t>();
+    std::int32_t ant1 = vm["ant1"].as<std::int32_t>();
+    if(ant1 < 0 || ant1 >63){
+        std::cout <<  "ERROR: ant1 set to "<<ant1<<". Not in range of 0 to 63." << std::endl << "Exiting Program" << std::endl;
+        return -1;
+    }
+    std::int32_t ant2 = vm["ant2"].as<std::int32_t>();
+    if(ant2 < 0 || ant2 >63){
+        std::cout <<  "ERROR: ant1 set to "<<ant2<<". Not in range of 0 to 63." << std::endl << "Exiting Program" << std::endl;
+        return -1;
+    }
+    std::int32_t numPackets = vm["num_packets_total"].as<std::int32_t>();
 
     spead2::thread_pool tp(10);
     udp::resolver resolver(tp.get_io_service());
-    udp::resolver::query query("127.0.0.1", txPort);
+    udp::resolver::query query(destIp, txPort);
     auto it = resolver.resolve(query);
     spead2::send::udp_stream stream(tp.get_io_service(), *it, spead2::send::stream_config(9000, 0,64,64),100000);
     spead2::flavour f(spead2::maximum_version, 64, 48);
@@ -150,7 +167,7 @@ int main(int argc, char** argv)
         }
     }
 
-    for(size_t k = 1; k < NUM_PACKETS; k++)
+    for(size_t k = 1; k < numPackets; k++)
     {
         if(regen == 1){
             regen=0;
@@ -177,7 +194,7 @@ int main(int argc, char** argv)
                         for (size_t f = 0; f < N_CHANNELS_PER_X_ENGINE; f++)
                         {
                             for(int i = 0; i<256*2*2;i++){
-                                if(j == ANTENNA1){
+                                if(j == ant1){
                                     if((i+0)%2==0 && (i+0)%4 == 0){
                                         feng_raw[j][f*256*2*2 + i] = (int8_t)array_temp[(arrayPos+0+f)%8];
                                     }else if((i+1)%2==0 && (i+1)%4 == 0){
@@ -187,7 +204,7 @@ int main(int argc, char** argv)
                                     }else{
                                         feng_raw[j][f*256*2*2+i] = (int8_t)array_temp[(arrayPos+4+f)%8];
                                     }        
-                                }else if (j == ANTENNA2)
+                                }else if (j == ant2)
                                 {
                                     if((i+0)%2==0 && (i+0)%4 == 0){
                                         feng_raw[j][f*256*2*2+i] = (int8_t)array_temp[(arrayPos+3+f)%8];
@@ -258,12 +275,13 @@ int main(int argc, char** argv)
             //m.lock();
         }
         for(int j = N_ANTS-1; j>=0; j--){
-            if(std::rand()%100 > DROP_PACKET_THRESHOLD_PERCENT){
+            if(std::rand()%100 >= dropRate){
                 stream.async_send_heap(h[j], [j,k] (const boost::system::error_code &ec, spead2::item_pointer_t bytes_transferred)
                 {
-                    if (ec)
+                    if (ec){
                         std::cerr << ec.message() << '\n';
-                    else
+                        std::cout << "Error Sending Data" << std::endl;
+                    }else
                     {
                         numSent++;
                         //if(k%REPORTING_SPACE==0 && j == 0){
@@ -293,7 +311,7 @@ int main(int argc, char** argv)
         
         while(true){
             if(numSent>=N_ANTS){
-                std::chrono::microseconds timespan(150); // or whatever
+                std::chrono::microseconds timespan(rateFudgeFactor); // or whatever
                 std::this_thread::sleep_for(timespan); 
                 //std::cout << numSent << std::endl;
                 numSent==0;

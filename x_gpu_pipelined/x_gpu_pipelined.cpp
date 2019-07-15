@@ -41,8 +41,8 @@ int main(int argc, char** argv){
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "produce help message")
-        ("rxport", po::value<int>()->default_value(8888), "Set receiver port")
-        ("txport", po::value<std::string>()->default_value("9888"), "Set transmitter port")
+        ("rx_port", po::value<int>()->default_value(8888), "Set receiver port")
+        ("tx_port", po::value<std::string>()->default_value("9888"), "Set transmitter port")
     ;
 
     po::variables_map vm;
@@ -54,8 +54,8 @@ int main(int argc, char** argv){
         return 1;
     }
 
-    std::string txPort = vm["txport"].as<std::string>();
-    int rxPort = vm["rxport"].as<int>();
+    std::string txPort = vm["tx_port"].as<std::string>();
+    int rxPort = vm["rx_port"].as<int>();
     //Create flow graph
     tbb::flow::graph g;
 
@@ -83,9 +83,9 @@ int main(int argc, char** argv){
     Spead2Rx rx(&bufferNode,rxPort);
     
     //Construct Edges
-    tbb::flow::make_edge(tbb::flow::output_port<0>(bufferNode), reorderNode);
-    tbb::flow::make_edge(tbb::flow::output_port<0>(reorderNode), gpuNode);
-    tbb::flow::make_edge(tbb::flow::output_port<0>(gpuNode),txNode);
+    //tbb::flow::make_edge(tbb::flow::output_port<0>(bufferNode), reorderNode);
+    //tbb::flow::make_edge(tbb::flow::output_port<0>(reorderNode), gpuNode);
+    //tbb::flow::make_edge(tbb::flow::output_port<0>(gpuNode),txNode);
 
     //Start Graph
     std::cout << "Starting Graph" << std::endl;
@@ -94,8 +94,10 @@ int main(int argc, char** argv){
     //boost::shared_ptr<StreamObject> spead2RxPacket = rx.receive_packet();
     auto start = std::chrono::high_resolution_clock::now();
     //while(spead2RxPacket==nullptr || !spead2RxPacket->isEOS()){
+    int heapsDropped_prev = pipelineCounts.heapsDropped;
+    int heapsReceived_prev = pipelineCounts.heapsReceived;
     while(true){
-        std::this_thread::sleep_for (std::chrono::seconds(500));
+        std::this_thread::sleep_for (std::chrono::seconds(10));
 
         //Reporting Code
         uint numPacketsReceived = (uint)pipelineCounts.Spead2RxStage - prevSpead2RxStage;
@@ -108,8 +110,11 @@ int main(int argc, char** argv){
                     << "Reorder     Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.ReorderStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.ReorderStage - prevReorderStage)*64 <<std::endl
                     << "GPUWrapper  Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.GPUWRapperStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.GPUWRapperStage - prevGPUWrapperStage)*64 <<std::endl
                     << "Spead2Tx    Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.Spead2TxStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.Spead2TxStage - prevSpead2TxStage)*64*1600 <<std::endl
-                    << "Incomplete Heaps: "<< (uint)pipelineCounts.heapsDropped <<" heaps out of "<< (uint)pipelineCounts.heapsReceived << ". Drop Rate: "<<std::setprecision(4) << float(pipelineCounts.heapsDropped)/float(pipelineCounts.heapsReceived)*100 <<" %"<< std::endl
+                    << "Incomplete Heaps: "<< (uint)pipelineCounts.heapsDropped <<" heaps out of "<< (uint)pipelineCounts.heapsReceived << ". Drop Rate Inst/Tot: "<<std::setprecision(4) << float(pipelineCounts.heapsDropped-heapsDropped_prev)/float(pipelineCounts.heapsReceived-heapsReceived_prev)*100 <<  "/" << float(pipelineCounts.heapsDropped)/float(pipelineCounts.heapsReceived)*100 <<" %"<< std::endl
                     << std::endl;
+
+        heapsDropped_prev = pipelineCounts.heapsDropped;
+        heapsReceived_prev = pipelineCounts.heapsReceived;
 
         if((pipelineCounts.BufferStage-prevBufferStage) == 0){
             debug = true;
