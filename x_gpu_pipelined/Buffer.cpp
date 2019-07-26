@@ -39,7 +39,7 @@ void Buffer::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::ou
             //Check that correct timestamp is propegated
 
             if((packet_timestamp - first_timestamp)/TIMESTAMP_JUMP > RESYNC_LIMIT){
-                std::cout << "Timestamp completly off, resync triggered in Buffer class" << std::endl;
+                std::cout << "Timestamp off by "<<((packet_timestamp - first_timestamp)/TIMESTAMP_JUMP)<<" samples, resync triggered in Buffer class" << std::endl;
                 first_timestamp = 0;
             }
 

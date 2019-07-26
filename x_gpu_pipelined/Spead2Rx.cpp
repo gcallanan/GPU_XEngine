@@ -82,6 +82,7 @@ void Spead2Rx::trivial_stream::heap_ready(spead2::recv::live_heap &&heap)
 {
     //std::cout << "Got heap " << heap.get_cnt();
     pipelineCounts.heapsReceived++;
+    //pipelineCounts.Spead2RxStage++;
     if (heap.is_complete())
     {   
         boost::shared_ptr<StreamObject> spead2RxPacket = process_heap(boost::make_shared<spead2::recv::heap>(boost::move(heap)));

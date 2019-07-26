@@ -185,7 +185,7 @@ x_gpu_pipelined: $(CUDA_CORRELATOR_OBJS) $(LIBXGPU)
 	$(NVCC) $(NVCCFLAGS) $(CUDA_CORRELATOR_OBJS) -o $@ $(LFLAGS) $(RPATH) -lxgpu -lrt
 
 xgpuinfo: $(XGPUINFO_OBJS) $(LIBXGPU)
-	$(NVCC) $(NVCCFLAGS) $(XGPUINFO_OBJS) -o $@ $(LFLAGS) $(RPATH) -lxgpu
+	$(NVCC) $(NVCCFLAGS) $(XGPUINFO_OBJS) -o $@ $(LFLAGS) $(RPATH) -lxgpu 
 
 $(LIBXGPU): $(LIBXGPU_OBJS)
 	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(LFLAGS) --shared
@@ -204,7 +204,7 @@ objs: $(BINXGPU_OBJS) $(LIBXGPU_OBJS)
 #    http://make.paulandlesley.org/autodep.html#traditional for more info.
 
 %.o: %.cpp
-	$(VERBOSE)$(NVCC) $(NVCCFLAGS) -M -o $*.P $< && \
+	$(VERBOSE)$(NVCC) $(NVCCFLAGS) -g -M -o $*.P $< && \
 	cp $*.P $*.d && \
 	sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 		  -e '/^$$/ d' -e 's/$$/ :/' < $*.P >> $*.d && \

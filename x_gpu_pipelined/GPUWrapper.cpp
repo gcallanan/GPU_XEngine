@@ -20,8 +20,9 @@ void GPUWrapper::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node
 
     int64_t timestamp_diff = ((int64_t)(inPacket->getTimestamp() - oldest_timestamp)/TIMESTAMP_JUMP);
 
+    //std::cout  << inPacket->getTimestamp() << std::endl;
     if(timestamp_diff > RESYNC_LIMIT || timestamp_diff < -RESYNC_LIMIT){
-        std::cout << "Timestamp completly off, resync triggered in GPUWrapper class" << std::endl;
+        std::cout << "Timestamp off by "<<timestamp_diff<<" samples, resync triggered in GPUWrapper class" << std::endl;
         while(inputOrderedQueue.size() > 0){
             inputOrderedQueue.pop();
         }
@@ -52,7 +53,7 @@ void GPUWrapper::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node
             if(numAccumulations==0){
                 tempGpuWrapperPacket = boost::make_shared<GPUWrapperPacket>(inPacket_cast->getTimestamp(),false,inPacket_cast->getFrequency(),xGpuBuffer);
             }
-
+            
             context->input_offset = inPacket_cast->getBufferOffset()*NUM_CHANNELS_PER_XENGINE*NUM_ANTENNAS*NUM_TIME_SAMPLES;
             context->output_offset = tempGpuWrapperPacket->getBufferOffset()*NUM_CHANNELS_PER_XENGINE*NUM_BASELINES*2*2;//2 For the real/imaginary components and 2 for the 4 products per baseline
             //std::cout << tempGpuWrapperPacket->getBufferOffset() << std::endl;
