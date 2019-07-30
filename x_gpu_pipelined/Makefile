@@ -29,13 +29,13 @@ datadir ?= $(prefix)/share
 aclocaldir ?= $(datadir)/aclocal
 
 ifeq ($(strip $(OSTYPE)),cygwin)
-NVCCFLAGS = --compiler-bindir "c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin" -Xcompiler /openmp
+NVCCFLAGS = --compiler-bindir "c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin" -Xcompiler /openmp 
 LFLAGS = -L"c:\Program Files\Microsoft SDKs\Windows\v7.1\Lib" -L.
 RPATH =
 LIBXGPU = libxgpu.dll
 else
 
-NVCCFLAGS = -std=c++11 -Xcompiler -D_REENTRANT -Xcompiler -Wall -Xcompiler -Wno-unused-function -ftz=true
+NVCCFLAGS = -std=c++11 -Xcompiler -D_REENTRANT -Xcompiler -Wall -Xcompiler -Wno-unused-function -ftz=true -Xcompiler -mavx
 
 ifneq ($(strip $(OSTYPE)),osx)
 NVCCFLAGS += -Xcompiler -fopenmp

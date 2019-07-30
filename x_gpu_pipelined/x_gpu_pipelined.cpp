@@ -54,6 +54,10 @@ int main(int argc, char** argv){
         return 1;
     }
 
+    #ifndef __AVX__
+    std::cout<<"AVX not supported"<<std::endl;
+    #endif
+
     std::string txPort = vm["tx_port"].as<std::string>();
     int rxPort = vm["rx_port"].as<int>();
     //Create flow graph
@@ -77,7 +81,7 @@ int main(int argc, char** argv){
     boost::shared_ptr<XGpuBuffers> xGpuBuffer = boost::make_shared<XGpuBuffers>();
     //Construct Graph Nodes
     multi_node bufferNode(g,1,Buffer());
-    multi_node reorderNode(g,tbb::flow::unlimited,Reorder(xGpuBuffer));//tbb::flow::unlimited
+    multi_node reorderNode(g,1,Reorder(xGpuBuffer));//tbb::flow::unlimited
     multi_node gpuNode(g,1,GPUWrapper(xGpuBuffer));
     multi_node txNode(g,1,SpeadTx(txPort));
     Spead2Rx rx(&bufferNode,rxPort);

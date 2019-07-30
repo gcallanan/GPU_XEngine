@@ -159,6 +159,11 @@ class XGpuBuffers{
           //std::cout << currentIndex << " grabbed" << std::endl;
           XGpuInputBufferPacket structOut;
           structOut.data_ptr = (uint8_t*)(context.array_h + xgpu_info.vecLength*currentIndex);
+          //std::cout << (int)structOut.data_ptr<<std::endl;//YOu want to convert this to an iteger and align it
+          //std::cout << (int*)structOut.data_ptr<< std::endl;
+          //std::cout <<(int)xgpu_info.vecLength << std::endl;
+          //std::cout <<(int)currentIndex << std::endl;
+          //std::cout << std::endl;
           structOut.offset = currentIndex;
           lockedLocations_CpuToGpu++;
           return structOut;

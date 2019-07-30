@@ -1,7 +1,7 @@
 #include "Reorder.h"
 #include <emmintrin.h>
 
-#define BLOCK_SIZE 8
+#define BLOCK_SIZE 4
 
 std::atomic<int> timeSincePacketsLastMissing; 
 
@@ -33,7 +33,9 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
         for (size_t fengId = 0; fengId < NUM_ANTENNAS; fengId+=BLOCK_SIZE)
         {
             DualPollComplex_in * inputArray[BLOCK_SIZE];
-            bool packetPresent[BLOCK_SIZE]; 
+            bool packetPresent[BLOCK_SIZE];
+            int32_t toTransfer[BLOCK_SIZE];
+
             for (size_t block_i = 0; block_i < BLOCK_SIZE; block_i++)
             {
                 inputArray[block_i] = (DualPollComplex_in*)inPacket_cast->getDataPtr(fengId+block_i);
@@ -59,13 +61,38 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
                     for (size_t block_i = 0; block_i < BLOCK_SIZE; block_i++)
                     {
                         if(packetPresent[block_i]){
-                            ((DualPollComplex_in*) outPacket->getDataPointer())[time_index*NUM_CHANNELS_PER_XENGINE*NUM_ANTENNAS+channel_index*NUM_ANTENNAS+fengId+block_i] = inputArray[block_i][channel_index*NUM_TIME_SAMPLES + time_index];
+                            toTransfer[block_i] = *((int32_t*) &inputArray[block_i][channel_index*NUM_TIME_SAMPLES + time_index]);
                         }else{
-                            ((DualPollComplex_in*) outPacket->getDataPointer())[time_index*NUM_CHANNELS_PER_XENGINE*NUM_ANTENNAS+channel_index*NUM_ANTENNAS+fengId+block_i] = inputSample;
+                            toTransfer[block_i] = *(int32_t*)&inputSample;
                         }
                     }
+
+                    DualPollComplex_in* dest_ptr = &(((DualPollComplex_in*) outPacket->getDataPointer())[time_index*NUM_CHANNELS_PER_XENGINE*NUM_ANTENNAS+channel_index*NUM_ANTENNAS+fengId]);
+                    #if BLOCK_SIZE == 8
+                        __m256i reg = _mm256_setr_epi32(toTransfer[0],toTransfer[1],toTransfer[2],toTransfer[3],toTransfer[4],toTransfer[5],toTransfer[6],toTransfer[7]);
+                        //std::cout << "Dest Pointer : " << dest_ptr << std::endl;
+                        _mm256_store_si256((__m256i*)dest_ptr,reg);
+                    #elif BLOCK_SIZE == 4
+                        __m128i reg = _mm_setr_epi32(toTransfer[0],toTransfer[1],toTransfer[2],toTransfer[3]);
+                        _mm_store_si128((__m128i*)dest_ptr,reg);
+                    #endif
+                    //__m256i reg = _mm256_setr_epi32(0,1,2,3,4,5,6,7);
+                    //__m128i reg = _mm_setr_epi32(toTransfer[0],toTransfer[1],toTransfer[2],toTransfer[3]);
+                    
+                    //DualPollComplex_in* dest_ptr2 = &(((DualPollComplex_in*) outPacket->getDataPointer())[time_index*NUM_CHANNELS_PER_XENGINE*NUM_ANTENNAS+channel_index*NUM_ANTENNAS+fengId+4]);
+                    //*dest_ptr = *(DualPollComplex_in*)&toTransfer[0];
+                    //_mm256_storeu_si128((__m128i*)dest_ptr,reg);
+                    //std::cout << "asd" << std::endl;
+                    
+                    //std::cout << "asd" << std::endl;
+                    //_mm_storeu_si128((__m128i*)dest_ptr,reg);
                 }
+
+                
             }
+
+        }
+        #endif
         
             /* if(inPacket_cast->isPresent(fengId)){
                 DualPollComplex_in * inputArray0 = (DualPollComplex_in*)inPacket_cast->getDataPtr(fengId);
@@ -110,8 +137,7 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
                     }
                 }   
             }*/
-        }
-        #endif
+        
         //std::cout << std::hex <<outPacket->getTimestamp() << std::endl;
         //*((int32_t*)outPacket->getDataPointer()) = accumulation_temp;
         if(!std::get<0>(op).try_put(boost::dynamic_pointer_cast<StreamObject>(outPacket))){
