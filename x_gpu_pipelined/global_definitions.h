@@ -38,7 +38,7 @@
 #define DEFAULT_ACCUMULATIONS_THRESHOLD ((int)(1632*1.2))
 
 //Reorder Specific Variables
-#define ARMORTISER_SIZE 10
+#define ARMORTISER_SIZE 100
 
 //Global Structs
 
@@ -53,6 +53,7 @@ typedef struct PipelineCountsStruct{
    std::atomic<int> Spead2TxStage;
    std::atomic<int> heapsDropped;
    std::atomic<int> heapsReceived;
+   std::atomic<int> packetsTooLate;
 } PipelineCounts;
 
 /**

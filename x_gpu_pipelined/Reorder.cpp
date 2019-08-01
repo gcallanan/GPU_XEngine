@@ -1,7 +1,8 @@
 #include "Reorder.h"
 #include <emmintrin.h>
 
-#define BLOCK_SIZE 4
+#define BLOCK_SIZE 8//Must be a power of 2
+#define USE_SSE 1 //1 to use, 0 to not use
 
 std::atomic<int> timeSincePacketsLastMissing; 
 
@@ -57,24 +58,43 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
             {
                 for(int time_index = 0; time_index < NUM_TIME_SAMPLES; time_index++)
                 {
-
-                    for (size_t block_i = 0; block_i < BLOCK_SIZE; block_i++)
-                    {
-                        if(packetPresent[block_i]){
-                            toTransfer[block_i] = *((int32_t*) &inputArray[block_i][channel_index*NUM_TIME_SAMPLES + time_index]);
-                        }else{
-                            toTransfer[block_i] = *(int32_t*)&inputSample;
-                        }
-                    }
-
                     DualPollComplex_in* dest_ptr = &(((DualPollComplex_in*) outPacket->getDataPointer())[time_index*NUM_CHANNELS_PER_XENGINE*NUM_ANTENNAS+channel_index*NUM_ANTENNAS+fengId]);
-                    #if BLOCK_SIZE == 8
-                        __m256i reg = _mm256_setr_epi32(toTransfer[0],toTransfer[1],toTransfer[2],toTransfer[3],toTransfer[4],toTransfer[5],toTransfer[6],toTransfer[7]);
-                        //std::cout << "Dest Pointer : " << dest_ptr << std::endl;
-                        _mm256_store_si256((__m256i*)dest_ptr,reg);
-                    #elif BLOCK_SIZE == 4
-                        __m128i reg = _mm_setr_epi32(toTransfer[0],toTransfer[1],toTransfer[2],toTransfer[3]);
-                        _mm_store_si128((__m128i*)dest_ptr,reg);
+                    #if USE_SSE == 1
+                        #if BLOCK_SIZE == 8
+                            __m256i reg = _mm256_setzero_si256();
+                            for (size_t block_i = 0; block_i < BLOCK_SIZE; block_i++)
+                            {
+                                if(packetPresent[block_i]){
+                                    reg = _mm256_insert_epi32(reg,*((int32_t*) &inputArray[block_i][channel_index*NUM_TIME_SAMPLES + time_index]),block_i);
+                                }
+                            }
+                            //__m256i reg = _mm256_setr_epi32(toTransfer[0],toTransfer[1],toTransfer[2],toTransfer[3],toTransfer[4],toTransfer[5],toTransfer[6],toTransfer[7]);
+                            _mm256_storeu_si256((__m256i*)dest_ptr,reg);
+                        #elif BLOCK_SIZE == 4
+                            __m128i reg = _mm_setzero_si128();
+                            for (size_t block_i = 0; block_i < BLOCK_SIZE; block_i++)
+                            {
+                                if(packetPresent[block_i]){
+                                    reg = _mm_insert_epi32(reg,*((int32_t*) &inputArray[block_i][channel_index*NUM_TIME_SAMPLES + time_index]),block_i);
+                                }
+                            }
+                            //__m128i reg = _mm_setr_epi32(toTransfer[0],toTransfer[1],toTransfer[2],toTransfer[3]);
+                            _mm_store_si128((__m128i*)dest_ptr,reg);
+                        #else
+                            #error "Wrong BLocksize for SSE instructions"
+                        #endif
+                    #elif USE_SSE == 0
+                        for (size_t block_i = 0; block_i < BLOCK_SIZE; block_i++)
+                        {
+                            if(packetPresent[block_i]){
+                                toTransfer[block_i] = *((int32_t*) &inputArray[block_i][channel_index*NUM_TIME_SAMPLES + time_index]);
+                            }else{
+                                toTransfer[block_i] = *(int32_t*)&inputSample;
+                            }
+                        }
+                        memcpy(dest_ptr,toTransfer, sizeof(int32_t)*BLOCK_SIZE);
+                    #else
+                        #error "USE_SSE must be either 1 or 0"
                     #endif
                     //__m256i reg = _mm256_setr_epi32(0,1,2,3,4,5,6,7);
                     //__m128i reg = _mm_setr_epi32(toTransfer[0],toTransfer[1],toTransfer[2],toTransfer[3]);

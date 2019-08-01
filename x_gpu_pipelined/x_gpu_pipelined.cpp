@@ -71,17 +71,19 @@ int main(int argc, char** argv){
     pipelineCounts.Spead2TxStage=1;
     pipelineCounts.heapsDropped=0;
     pipelineCounts.heapsReceived=0;
+    pipelineCounts.packetsTooLate=0;
 
     int prevSpead2RxStage=0;//.load(pipelineCounts.Spead2Stage);
     int prevBufferStage=0;//.load(pipelineCounts.BufferStage);
     int prevReorderStage=0;//.load(pipelineCounts.ReorderStage);
     int prevGPUWrapperStage=0;
     int prevSpead2TxStage=0;
+    int prevPacketsTooLate=0;
 
     boost::shared_ptr<XGpuBuffers> xGpuBuffer = boost::make_shared<XGpuBuffers>();
     //Construct Graph Nodes
     multi_node bufferNode(g,1,Buffer());
-    multi_node reorderNode(g,1,Reorder(xGpuBuffer));//tbb::flow::unlimited
+    multi_node reorderNode(g,2,Reorder(xGpuBuffer));//tbb::flow::unlimited
     multi_node gpuNode(g,1,GPUWrapper(xGpuBuffer));
     multi_node txNode(g,1,SpeadTx(txPort));
     Spead2Rx rx(&bufferNode,rxPort);
@@ -134,6 +136,7 @@ int main(int argc, char** argv){
                     << "GPUWrapper  Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.GPUWRapperStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.GPUWRapperStage - prevGPUWrapperStage)*64 <<std::endl
                     << "Spead2Tx    Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.Spead2TxStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.Spead2TxStage - prevSpead2TxStage)*64*1600 <<std::endl
                     << "Incomplete Heaps: "<< (uint)pipelineCounts.heapsDropped <<" heaps out of "<< (uint)pipelineCounts.heapsReceived << ". Drop Rate Inst/Tot: "<<std::setprecision(4) << float(pipelineCounts.heapsDropped-heapsDropped_prev)/float(pipelineCounts.heapsReceived-heapsReceived_prev)*100 <<  "/" << float(pipelineCounts.heapsDropped)/float(pipelineCounts.heapsReceived)*100 <<" %"<< std::endl
+                    << "Heaps Too Late: " << (uint)pipelineCounts.packetsTooLate << ". Diff: " << ((uint)pipelineCounts.packetsTooLate - prevPacketsTooLate) << ". Instantanues Percentage Late:" <<((float)((uint)pipelineCounts.packetsTooLate - prevPacketsTooLate))/((float)(pipelineCounts.heapsReceived-heapsReceived_prev))*100<<"%"<<std::endl
                     << std::endl;
 
         heapsDropped_prev = pipelineCounts.heapsDropped;
@@ -151,6 +154,7 @@ int main(int argc, char** argv){
         prevReorderStage = pipelineCounts.ReorderStage;
         prevGPUWrapperStage = pipelineCounts.GPUWRapperStage;
         prevSpead2TxStage = pipelineCounts.Spead2TxStage;
+        prevPacketsTooLate = pipelineCounts.packetsTooLate;
 
         start=now;
 
