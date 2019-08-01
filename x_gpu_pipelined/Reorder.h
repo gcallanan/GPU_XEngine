@@ -11,6 +11,7 @@ class Reorder{
 
     private:
         boost::shared_ptr<XGpuBuffers> xGpuBuffer; 
+        boost::shared_ptr<Spead2RxPacketWrapper> outPacketArmortiser;
 };
 
 #endif

@@ -1,6 +1,6 @@
 #include "GPUWrapper.h"
 
-GPUWrapper::GPUWrapper(boost::shared_ptr<XGpuBuffers> xGpuBuffer): accumulationsThreshold(1600),numAccumulations(0),xGpuBuffer(xGpuBuffer),storageQueue(),inputOrderedQueue(){
+GPUWrapper::GPUWrapper(boost::shared_ptr<XGpuBuffers> xGpuBuffer): accumulationsThreshold(1600),numAccumulations(0),xGpuBuffer(xGpuBuffer),storageQueue(){
     oldest_timestamp = 0;
 }
 
@@ -18,35 +18,25 @@ int GPUWrapper::getAccumulationsThreshold(){
 
 void GPUWrapper::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::output_ports_type &op){
 
-    int64_t timestamp_diff = ((int64_t)(inPacket->getTimestamp() - oldest_timestamp)/TIMESTAMP_JUMP);
+    boost::shared_ptr<Spead2RxPacketWrapper> inPacketQueue = boost::dynamic_pointer_cast<Spead2RxPacketWrapper>(inPacket);
+    while(inPacketQueue->getArmortiserSize() > 0)
+    {
+        boost::shared_ptr<StreamObject> inPacket_pop = inPacketQueue->removePacket();
+        int64_t timestamp_diff = ((int64_t)(inPacket_pop->getTimestamp() - oldest_timestamp)/TIMESTAMP_JUMP);
+        //std::cout  << inPacket->getTimestamp() << std::endl;
 
-    //std::cout  << inPacket->getTimestamp() << std::endl;
-    if(timestamp_diff > RESYNC_LIMIT || timestamp_diff < -RESYNC_LIMIT){
-        std::cout << "Timestamp off by "<<timestamp_diff<<" samples, resync triggered in GPUWrapper class" << std::endl;
-        while(inputOrderedQueue.size() > 0){
-            inputOrderedQueue.pop();
-        }
-        //std::cout<< "new " << inPacket->getTimestamp() << std::endl;
-        //std::cout<< "old " << oldest_timestamp << std::endl;
-        //std::cout<<timestamp_diff<<std::endl;
-        //std::cout << inputOrderedQueue.size() << std::endl;
-        //numAccumulations=0;
-    }
+        oldest_timestamp = inPacket_pop->getTimestamp() ;
 
-    oldest_timestamp = inPacket->getTimestamp() ;
-
-    inputOrderedQueue.push(inPacket);
-    if(inputOrderedQueue.size() > MINIMUM_QUEUE_SIZE){
-        boost::shared_ptr<StreamObject> inPacketFromQueue = inputOrderedQueue.top();
-        inputOrderedQueue.pop();
+        //inputOrderedQueue.push(inPacket_pop);
+        //if(inputOrderedQueue.size() > MINIMUM_QUEUE_SIZE){
         //std::cout<<inPacketFromQueue->getTimestamp() << " " << inPacket->getTimestamp() << std::endl;
         //std::cout << "====== " << inPacketFromQueue->getTimestamp() << " ====" <<std::endl;
         
-        if(inPacketFromQueue->isEOS()){
+        if(inPacket_pop->isEOS()){
             std::cout <<"GPUWrapper Class: End of stream" << std::endl;
-            std::get<0>(op).try_put(inPacketFromQueue);//(std::make_shared<StreamObject>());
+            std::get<0>(op).try_put(inPacket_pop);//(std::make_shared<StreamObject>());
         }else{
-            boost::shared_ptr<ReorderPacket> inPacket_cast = boost::dynamic_pointer_cast<ReorderPacket>(inPacketFromQueue);
+            boost::shared_ptr<ReorderPacket> inPacket_cast = boost::dynamic_pointer_cast<ReorderPacket>(inPacket_pop);
             int xgpu_error = 0;
             XGPUContext * context = xGpuBuffer->getXGpuContext_p();
 
@@ -87,6 +77,7 @@ void GPUWrapper::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node
             //   std::cout << "Packet failed to be passed to GPU class" << std::endl;
             //}   
         }  
+        //}
     }
     pipelineCounts.GPUWRapperStage++;
 }

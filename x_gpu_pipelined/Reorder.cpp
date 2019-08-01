@@ -7,6 +7,7 @@
 std::atomic<int> timeSincePacketsLastMissing; 
 
 Reorder::Reorder(boost::shared_ptr<XGpuBuffers> xGpuBuffer):xGpuBuffer(xGpuBuffer){
+    outPacketArmortiser = boost::make_shared<Spead2RxPacketWrapper>();
     timeSincePacketsLastMissing=0;
 }
 
@@ -164,9 +165,19 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
             
             //std::cout << std::hex <<outPacket->getTimestamp() << std::endl;
             //*((int32_t*)outPacket->getDataPointer()) = accumulation_temp;
-            if(!std::get<0>(op).try_put(boost::dynamic_pointer_cast<StreamObject>(outPacket))){
-                //std::cout << "Packet failed to be passed to GPU class" << std::endl;
+
+            outPacketArmortiser->addPacket(boost::dynamic_pointer_cast<StreamObject>(outPacket));
+            if(outPacketArmortiser->getArmortiserSize() >= ARMORTISER_SIZE){
+                if(!std::get<0>(op).try_put(outPacketArmortiser)){
+                    std::cout << "Packet Failed to be passed to GPU Wrapper class" << std::endl;
+                }
+                outPacketArmortiser = boost::make_shared<Spead2RxPacketWrapper>();
             }
+
+
+            //if(!std::get<0>(op).try_put(boost::dynamic_pointer_cast<StreamObject>(outPacket))){
+             //   //std::cout << "Packet failed to be passed to GPU class" << std::endl;
+            //}
         }
     }
     pipelineCounts.ReorderStage++;
