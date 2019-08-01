@@ -5,6 +5,7 @@
 
 
 Buffer::Buffer(): first_timestamp(0){
+    outPacketArmortiser = boost::make_shared<Spead2RxPacketWrapper>();
     for (size_t i = 0; i < BUFFER_SIZE; i++)
     {
         buffer.push_front(nullptr);
@@ -69,12 +70,18 @@ void Buffer::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::ou
                     int numPops = 0;
                     while((index>=BUFFER_SIZE || buffer[0] == nullptr) && numPops != BUFFER_SIZE){
                         if(buffer[0] != nullptr){
-                            if(debug){
-                                //std::cout << "c" << std::endl;
+
+                            outPacketArmortiser->addPacket(boost::dynamic_pointer_cast<StreamObject>(buffer[0]));
+                            if(outPacketArmortiser->getArmortiserSize() >= ARMORTISER_SIZE){
+                                if(!std::get<0>(op).try_put(outPacketArmortiser)){
+                                    std::cout << "Packet Failed to be passed to buffer class" << std::endl;
+                                }
+                                outPacketArmortiser = boost::make_shared<Spead2RxPacketWrapper>();
                             }
-                            if(!std::get<0>(op).try_put(boost::dynamic_pointer_cast<StreamObject>(buffer[0]))){
+
+                            //if(!std::get<0>(op).try_put(boost::dynamic_pointer_cast<StreamObject>(buffer[0]))){
                             //    std::cout << "Packet Failed to be passed to reorder class" << std::endl;
-                            }
+                            //}
                         }
                         buffer.pop_front();
                         //std::cout << "basdbas" << buffer.size()<<std::endl;
