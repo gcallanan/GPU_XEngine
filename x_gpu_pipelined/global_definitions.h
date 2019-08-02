@@ -39,6 +39,7 @@
 
 //Reorder Specific Variables
 #define ARMORTISER_SIZE 100
+#define ARMORTISER_TO_GPU_SIZE 20
 
 //Global Structs
 

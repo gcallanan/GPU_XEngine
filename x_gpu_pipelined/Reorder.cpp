@@ -167,7 +167,7 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
             //*((int32_t*)outPacket->getDataPointer()) = accumulation_temp;
 
             outPacketArmortiser->addPacket(boost::dynamic_pointer_cast<StreamObject>(outPacket));
-            if(outPacketArmortiser->getArmortiserSize() >= ARMORTISER_SIZE){
+            if(outPacketArmortiser->getArmortiserSize() >= ARMORTISER_TO_GPU_SIZE){
                 if(!std::get<0>(op).try_put(outPacketArmortiser)){
                     std::cout << "Packet Failed to be passed to GPU Wrapper class" << std::endl;
                 }
