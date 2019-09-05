@@ -1,3 +1,14 @@
+/**
+ * \file global_definitions.h
+ *
+ * \brief File containing most user configurable parameters
+ *
+ * \author Gareth Callanan
+ * 
+ * This file contains most of the macros that the user will need to change for their own needs. It also contains the pipeline packet classes that are used to pass data between pipeline stages. The 
+ *
+ */
+
 #ifndef _GLOBAL_DEFINITIONS_H
 #define _GLOBAL_DEFINITIONS_H
 
@@ -20,45 +31,61 @@
 #include <atomic>
 
 //Global Defines
+/** Number of antennas in the array. */
 #define NUM_ANTENNAS 64
+/** Number of channels to be processed per X-Engine. Also the number of channels per SPEAD heap */
 #define NUM_CHANNELS_PER_XENGINE 16 
-#define FFT_SIZE (NUM_CHANNELS_PER_XENGINE*4*NUM_ANTENNAS)
+/** Size of the FFT performed by the F-Engines.*/
+/** Number of polarisations per channel to be processed per X-Engine */
 #define NUM_POLLS 2
+/** Number of time samples per SPEAD heap */
 #define NUM_TIME_SAMPLES 256
+
+
+#define FFT_SIZE (NUM_CHANNELS_PER_XENGINE*4*NUM_ANTENNAS)
+/** Size of a quadrant - This is used for displaying the baseline as the ordering does not follow a simple pattern. See displayBaseline() and getBaselineOffset() for an implementation of baseline ordering */
 #define QUADRANT_SIZE ((NUM_ANTENNAS/2+1)*(NUM_ANTENNAS/4))
+
+/** Number of baselines being output */
 #define NUM_BASELINES (QUADRANT_SIZE*4)
 
 
-//Buffer Specific Packets
+/** Number of  consecutive timestamps the Buffer class will have room to buffer */
 #define BUFFER_SIZE 20
+
+/** If the incoming packet has a timestamp which is greater than RESYNC_LIMIT then a resync is triggered */
 #define RESYNC_LIMIT 200
+
+/** Difference in time between consecutive timestamps */
 #define TIMESTAMP_JUMP (NUM_TIME_SAMPLES*2*FFT_SIZE)
 
-//X Engine Specific Variables
+/** Maximum number of accumulations */
 #define DEFAULT_ACCUMULATIONS_THRESHOLD ((int)(1632*1.2))
 
-//Reorder Specific Variables
+/** Before packets are handed over to the next stage of the pipeline they are grouped into a larger packet to reduce thread overhead. ARMORTISER_SIZE specifies the number of packets to group*/
 #define ARMORTISER_SIZE 100
+
+/** Same function as ARMORTISER_SIZE but specifically implemented for the transmission from the Reorder to the GPUWrapper class. This class needs to have a smaller ARMORTISER_SIZE as the packets queued here are holding GPU memory which we want to use efficiently */
 #define ARMORTISER_TO_GPU_SIZE 20
 
 //Global Structs
 
 /**
- * Struct Storing Pipeline Stages implementation 
+ * Struct counters for different stages in the pipeline. This is used to monitor flow rates through the pipeline
  */
 typedef struct PipelineCountsStruct{
-   std::atomic<int> Spead2RxStage;
-   std::atomic<int> BufferStage;
-   std::atomic<int> ReorderStage;
-   std::atomic<int> GPUWRapperStage;
-   std::atomic<int> Spead2TxStage;
-   std::atomic<int> heapsDropped;
-   std::atomic<int> heapsReceived;
-   std::atomic<int> packetsTooLate;
+   std::atomic<int> Spead2RxStage; /**< Number of packets processed by Spead2Rx pipeline.*/
+   std::atomic<int> BufferStage; /**< Number of packets processed by Buffer pipeline stage. */
+   std::atomic<int> ReorderStage; /**< Number of packets processed by by the Reorder pipeline class. */
+   std::atomic<int> GPUWRapperStage; /**< Number of packets processed by the GPUWrapper pipeline class. */
+   std::atomic<int> Spead2TxStage; /**< Number of packets processed by SpeadTx class. */
+   std::atomic<int> heapsDropped; /**< Number of heaps dropped due to not receiving all ethernet packets. */
+   std::atomic<int> heapsReceived; /**< Total number of heaps received.(Complete and dropped) */
+   std::atomic<int> packetsTooLate; /**< Packets received by Buffer class that were dropped as the timestamp is too late to arrive */
 } PipelineCounts;
 
 /**
- * Struct storing samples as formatted bythe F-Engines
+ * Struct storing dual pol complex samples as received by the F-Engines
  */
 typedef struct DualPollComplexStruct_in {
   int8_t realPol0;/**< Pol 0 Real Memeber. */
@@ -87,59 +114,72 @@ typedef struct BaselineProductsStruct_out {
 #endif
 
 /**
- * @brief: Struct containting the data that will be fed into xGPU.
- * 
- * Struct containting the data that will be fed into xGPU.
- * The samples are ordered from [time][channel][station][polarization][complexity](ordered from slowest to fastest changing values) when not using DP4A instructions. 
- * 
- * The ordering is different if DP4A is required, the general ordering remains the same but the timestamps are interleaved . See function (TODO: Insert function here) for more information
+ * Struct pointing to location in pinned host memory that will be transferred to the GPU. The XGpuBuffers class manages the allocation of this memory, the XGpuInputBufferPacket just stores the pointer and index of this in the buffer 
+ * The samples are ordered from [time][channel][antenna][polarization][complexity](ordered from slowest to fastest changing values) when not using DP4A instructions.
+ * \param data_ptr Pointer to location in pinned host memory buffer
+ * \param offset The position of this packet within the other packets in the buffer
  */
-typedef struct XGpuPacketInStruct{
-    uint64_t timestamp_u64;/**< Timestamp. */
-    uint64_t fEnginesPresent_u64;/**< The bits in this field from 0 to NUM_ANTENNAS will be set to 1 if the corresponding F-Engine packet has been recieved or 0 otherwise.. */
-    uint64_t frequencyBase_u64;/**< Base Frequency of the samples packet. Frequeny in packet run from frequencyBase_u64 to frequencyBase_u64+NUM_CHANNELS_PER_XENGINE */
-    uint8_t numFenginePacketsProcessed;/**< Number of F-Engine packets recieved, equal to NUM_ANTENNAS if all packets are received, missing antennas should have their data zeroed*/
-    DualPollComplex_in * samples_s;/**< Pointer to the F-Engine samples. The samples_s array should contain NUM_CHANNELS_PER_XENGINE*NUM_ANTENNAS*NUM_TIME_SAMPLES DualPollComplex_in samples */
-} XGpuPacketIn;
-
-/**
- * @brief: Struct containting the data that is generated by xGPU.
- * 
- * Struct containting the data that is generated by xGPU. The data is arranged as [complexity][channel][station][station](ordered from slowest to fastest changing values).
- * The function getBaselineOffset shows the ordering of the [station][station] section. This ordering is complicated as the baselines are split into quadrants based on whether station1/station2 are odd or even 
- */
-typedef struct XGpuPacketOutStruct{
-    uint64_t timestamp_u64;/**< Timestamp. */
-    uint64_t frequencyBase_u64;/**< Base Frequency of the samples packet. Frequeny in packet run from frequencyBase_u64 to frequencyBase_u64+NUM_CHANNELS_PER_XENGINE */
-    BaselineProductsStruct_out * baselines;/**< Pointer to xGpu baselines out. The real and imaginary components are split.*/
-} XGpuPacketOut;
-
-
 typedef struct XGpuInputBufferPacketStruct{
     uint8_t * data_ptr;
     int offset;
 } XGpuInputBufferPacket;
 
+/**
+ * Struct  pointing to the location in host memory that the data that is generated by xGPU is stored. 
+ * The data is arranged as [complexity][channel][antenna][antenna](ordered from slowest to fastest changing values).
+ * The function getBaselineOffset() shows the ordering of the [antenna][antenna] section. This ordering is complicated as the baselines are split into quadrants based on whether antenna1/antenna2 are odd or even 
+ * \param data_ptr Pointer to location in pinned host memory buffer
+ * \param offset The position of this packet within the other packets in the buffer
+ */
 typedef struct XGpuOutputBufferPacketStruct{
     uint8_t * data_ptr;
     int offset;
 } XGpuOutputBufferPacket;
 
+/** 
+ * \brief Function to get the index of a single baseline in a packet of baselines output from xGPU. 
+ * This offset is not in bytes, but in baselines. It needs to be multiplied by size of a baseline to search through bytes.
+ * It is required that ant0>ant1 or else an error is thrown
+ * \param[in] XGpuPacketOut Pointer to packet containing the output baselines
+ * \param[in] ant0 Index of first antenna.
+ * \param[in] ant1 Index of second antenna
+ */
 int getBaselineOffset(int ant0, int ant1);
 
+/** 
+ * \brief Function to print out an individual baseline.
+ * It is required that i>j or else an error is thrown
+ * \param[in] XGpuPacketOut Pointer to packet containing the output baselines
+ * \param[in] i Index of first antenna.
+ * \param[in] j Index of second antenna
+ */
 void displayBaseline(BaselineProducts_out* XGpuPacketOut, int i, int j);
 
-#define DEFAULT_OUTPUT_BUFFERS_THRESHOLD 4
+/** Number of output xGPU packets to allocate space for. This needs to be greater than 1 so that another output packet can be allocated while another is being processed. However this does not need to be too large as a new packet gets created in the order of seconds.*/
+#define DEFAULT_XGPU_OUTPUT_BUFFERS_THRESHOLD 4
 
+/**
+ * \brief A class for managing xGPU initialisation and memory assignment.
+ * 
+ * It will allocate memory when required as well as handle the freeing of this memory. This is required as xGPU has a fixed input buffer that is pinned to memory. No new memory can be assigned. This is implemented as a ring buffer.
+ * \author Gareth Callanan
+ */
 class XGpuBuffers{
     public:
-        XGpuBuffers(): lockedLocations_CpuToGpu(0),mutex_array_CpuToGpu(new std::mutex[DEFAULT_ACCUMULATIONS_THRESHOLD]),mutex_array_GpuToCpu(new std::mutex[DEFAULT_OUTPUT_BUFFERS_THRESHOLD]),accessLock_CpuToGpu(),accessLock_GpuToCpu(){
+        /**
+         * Default Constructor for XGpuBuffer. 
+         * 
+         * This constructor creates the input and output ring buffers for xGPU. 
+         * 
+         * It also initialised the xgpuContext object which is required by the xGPU library
+         */
+        XGpuBuffers(): lockedLocations_CpuToGpu(0),mutex_array_CpuToGpu(new std::mutex[DEFAULT_ACCUMULATIONS_THRESHOLD]),mutex_array_GpuToCpu(new std::mutex[DEFAULT_XGPU_OUTPUT_BUFFERS_THRESHOLD]){
           xgpuInfo(&xgpu_info);
           int xgpu_error = 0;
           index_CpuToGpu=0;
           lockedLocations_CpuToGpu=0;
-          context.array_len = xgpu_info.vecLength*DEFAULT_ACCUMULATIONS_THRESHOLD;
-          context.matrix_len = xgpu_info.matLength*DEFAULT_OUTPUT_BUFFERS_THRESHOLD;
+          context.array_len = xgpu_info.vecLength*DEFAULT_ACCUMULATIONS_THRESHOLD;//Determines size of input ring buffer. With xgpu_info.vecLength being the size of a single input packet and DEFAULT_ACCUMULATIONS_THRESHOLD being the total number of packets to be able to store
+          context.matrix_len = xgpu_info.matLength*DEFAULT_XGPU_OUTPUT_BUFFERS_THRESHOLD;//Determines size of output ring buffer. With xgpu_info.matLength being the size of a single output packet and DEFAULT_XGPU_OUTPUT_BUFFERS_THRESHOLD being the total number of packets to be able to store
           context.array_h = (ComplexInput*)malloc(context.array_len*sizeof(ComplexInput));
           context.matrix_h = (Complex*)malloc(context.matrix_len*sizeof(Complex));
           std::cout << ((float)(context.array_len*sizeof(ComplexInput)))/1024/1024/1024 << " GB of gpu storage allocated." << std::endl; 
@@ -147,42 +187,48 @@ class XGpuBuffers{
           if(xgpu_error) {
               std::cout << "xgpuInit returned error code: " << xgpu_error << std::endl;
           }
-        };
+        }
 
+        /**
+         * Returns a pointer to the xGPU Context object.
+         * \return Pointer to XGPUContext
+         */
         XGPUContext * getXGpuContext_p(){
           return &context;
         }
 
-        //NOTE: I am concerned that the interaction between the wrap around of the index variable and the mutex mechanism will cause a problem - it might make more sense just to have single lock blocking this entire function
+        /**
+         * Allocates a single input packet size worth of memory in the CpuToGpu ring buffer.
+         * Blocks if there is no free space available.
+         * \return Struct with details of allocated CpuToGpu memory
+         */
         XGpuInputBufferPacket allocateMemory_CpuToGpu(){
           int currentIndex = index_CpuToGpu++ % DEFAULT_ACCUMULATIONS_THRESHOLD;
-          //std::cout << currentIndex << " attempted grab" << std::endl;
           mutex_array_CpuToGpu[currentIndex].lock();
-          //std::cout << currentIndex << " grabbed" << std::endl;
           XGpuInputBufferPacket structOut;
           structOut.data_ptr = (uint8_t*)(context.array_h + xgpu_info.vecLength*currentIndex);
-          //std::cout << (int)structOut.data_ptr<<std::endl;//YOu want to convert this to an iteger and align it
-          //std::cout << (int*)structOut.data_ptr<< std::endl;
-          //std::cout <<(int)xgpu_info.vecLength << std::endl;
-          //std::cout <<(int)currentIndex << std::endl;
-          //std::cout << std::endl;
           structOut.offset = currentIndex;
           lockedLocations_CpuToGpu++;
           return structOut;
         }
 
+        /**
+         * Frees memory from the CpuToGpu ring buffer.
+         * \param[in] blockToFree The index of the object to free. This index is the XGpuInputBufferPacket.offset value.
+         */
         void freeMemory_CpuToGpu(int blockToFree){
           mutex_array_CpuToGpu[blockToFree].unlock();
-          //std::cout << blockToFree << " freed" << std::endl;
           lockedLocations_CpuToGpu--;
         }
 
-
+        /**
+         * Allocates a single output packet size worth of memory in the GpuToCpu ring buffer.
+         * Blocks if there is no free space available.
+         * \return Struct with details of the GpuToCpu buffer
+         */
         XGpuOutputBufferPacket allocateMemory_GpuToCpu(){
-          int currentIndex = index_GpuToCpu++ % DEFAULT_OUTPUT_BUFFERS_THRESHOLD;
-          //std::cout << currentIndex << " attempted grab" << std::endl;
+          int currentIndex = index_GpuToCpu++ % DEFAULT_XGPU_OUTPUT_BUFFERS_THRESHOLD;
           mutex_array_GpuToCpu[currentIndex].lock();
-          //std::cout << currentIndex << " grabbed" << std::endl;
           XGpuOutputBufferPacket structOut;
           structOut.data_ptr = (uint8_t*)(context.matrix_h + xgpu_info.matLength *currentIndex);
           structOut.offset = currentIndex;
@@ -190,52 +236,90 @@ class XGpuBuffers{
           return structOut;
         }
 
+        /**
+         * Frees memory from the GpuToCpu ring buffer
+         * \param[in] blockToFree The index of the object to free. This index is the XGpuOutputBufferPacket.offset value.
+         */
         void freeMemory_GpuToCpu(int blockToFree){
-          //std::cout << blockToFree << " ============================" << std::endl;
           mutex_array_GpuToCpu[blockToFree].unlock();
-          //std::cout << blockToFree << " freed" << std::endl;
           lockedLocations_GpuToCpu--;
         }
 
     private:
         XGPUInfo xgpu_info;
-        boost::shared_ptr<std::mutex[]> mutex_array_CpuToGpu;
-        boost::shared_ptr<std::mutex[]> mutex_array_GpuToCpu;
-        std::atomic<int> lockedLocations_CpuToGpu;
-        std::atomic<int> index_CpuToGpu;
-        std::atomic<int> lockedLocations_GpuToCpu;
-        std::atomic<int> index_GpuToCpu;
+        boost::shared_ptr<std::mutex[]> mutex_array_CpuToGpu;//Mutex for each index in the CpuToGpu ring buffer
+        boost::shared_ptr<std::mutex[]> mutex_array_GpuToCpu;//Mutex for each index in the GpuToCpu ring buffer
+        std::atomic<int> lockedLocations_CpuToGpu;//Tracks the number of locked input locations. This is not required for anything. Useful to track in case of a bug
+        std::atomic<int> index_CpuToGpu;// Circular buffer index
+        std::atomic<int> lockedLocations_GpuToCpu;//Tracks the number of locked outputlocations. This is not required for anything. Useful to track in case of a bug
+        std::atomic<int> index_GpuToCpu;// Circular buffer index
         XGPUContext context;
-        std::mutex accessLock_CpuToGpu;
-        std::mutex accessLock_GpuToCpu;
 };
 
 
-
+/**
+ * \brief A base class for packets to be passed between stages in the pipline.
+ * 
+ * This base class does not containe any stage specific variables. All packets passed on the pipeline will have this class as their parent
+ * 
+ * \author Gareth Callanan
+ */
 class StreamObject{
     public:
+        /** 
+         * \brief Constructor for standard Stream Object packet
+         * 
+         * \param eos True for End of Stream(EOS), false otherwise
+         * \param timestamp_u64 Packet Timestamp
+         * \param frequency Base Frequency of packet. Frequency in packet ranges from frequency to frequency+NUM_CHANNELS_PER_XENGINE
+         */
         StreamObject(uint64_t timestamp_u64,bool eos,uint64_t frequency): timestamp_u64(timestamp_u64),eos(eos),frequency(frequency){
 
         }
+
+        /** 
+         * \brief Constructor for empty packet
+         * 
+         * Creates an empty packet with the option to set the End of Stream(EOS) flag
+         * 
+         * \param eos True for EOS, false otherwise
+         */
         StreamObject(bool eos): eos(eos),timestamp_u64(0),frequency(0){
 
         }
-        uint64_t getTimestamp(){
+
+        virtual uint64_t getTimestamp(){
           return timestamp_u64;
         }
         uint64_t getFrequency(){
           return frequency;
         }
+
+        /**
+         * \brief Determines if this is an End Of Stream packet
+         * 
+         * \return True for End of Stream, False Otherwise
+         */
         bool isEOS(){
           return eos;
         }
-        virtual bool isEmpty(){
-          return true;
-        }
+
+
+        /**
+         * \brief Comparator for < operator
+         * 
+         * Compares packets according to timestamps
+         */
         friend bool operator<(StreamObject& lhs, StreamObject& rhs)
         {
           return lhs.getTimestamp() < rhs.getTimestamp();
         }
+
+        /**
+         * \brief Comparator for > operator
+         * 
+         * Compares packets according to timestamps
+         */
         friend bool operator>(StreamObject& lhs, StreamObject& rhs)
         {
           return lhs.getTimestamp() > rhs.getTimestamp();
@@ -246,15 +330,29 @@ class StreamObject{
         const uint64_t frequency;
 };
 
+/**
+ * \brief Packet that is transmitted by the Spead2Rx class
+ * 
+ * Contains a pointer to a single SPEAD heap. This heap has an associated F-Engine ID on top of the other general StreamObject parameters
+ * 
+ * \author Gareth Callanan
+ */
 class Spead2RxPacket: public StreamObject
 {
     public:
+        /** 
+         * \brief Constructor for standard Stream Object packet
+         * 
+         * \param eos True for End of Stream(EOS), false otherwise
+         * \param timestamp_u64 Packet Timestamp
+         * \param frequency Base Frequency of packet. Frequency in packet ranges from frequency to frequency+NUM_CHANNELS_PER_XENGINE
+         * \param fheap Pointer to the heap received from a SPEAD2 stream
+         * \param payloadPtr_p Pointer to the payload of the heap. This prevents this value having to be re-calculated.
+         * \param fEngineId The ID of the F-Engine that this packet is from
+         */
         Spead2RxPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,uint64_t fEngineId,uint8_t *payloadPtr_p, boost::shared_ptr<spead2::recv::heap>fheap): StreamObject(timestamp_u64,eos,frequency),fEngineId(fEngineId),fheap(fheap),payloadPtr_p(payloadPtr_p){
 
         }
-        //Spead2RxPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,uint64_t fEngineId): StreamObject(timestamp_u64,eos,frequency),fEngineId(fEngineId){
-        //  fheap = nullptr;
-        //}
         uint64_t getFEngineId(){
           return fEngineId;
         }
@@ -264,11 +362,8 @@ class Spead2RxPacket: public StreamObject
         uint8_t * getPayloadPtr_p(){
           return payloadPtr_p;
         }
-        //virtual bool isEmpty(){
-        //  return(fheap==nullptr);
-        //}
         
-    protected:
+    private:
         uint64_t fEngineId;
         uint8_t * payloadPtr_p;
         boost::shared_ptr<spead2::recv::heap> fheap;
@@ -291,19 +386,15 @@ class BufferPacket: public virtual StreamObject{
         }
         
         void addPacket(int antIndex,boost::shared_ptr<spead2::recv::heap> fheap,uint8_t* data_ptr){
-            //std::cout<<(int)this->numFenginePacketsProcessed <<" " << antIndex << std::endl;
             if(!this->isPresent(antIndex)){
-              //std::cout << "1" << " " << antIndex <<std::endl;
               heaps_v[antIndex]=fheap;
               data_pointers_v[antIndex] = data_ptr;
-              //std::cout << "2" << std::endl;
               numFenginePacketsProcessed++;
               fEnginesPresent_u64 |= 1UL << antIndex;
             }else{
               std::cout << "Received a duplicate packet" << std::endl;
               throw "Received a duplicate packet";
             }
-            //std::cout << "4" << std::endl;
         }
 
         bool isPresent(int antIndex){
@@ -318,11 +409,7 @@ class BufferPacket: public virtual StreamObject{
           return data_pointers_v[antIndex];
         }
 
-        //virtual bool isEmpty(){
-        //  return heaps_v.size() == 0;
-        //}
-
-    protected:
+    private:
         uint8_t numFenginePacketsProcessed;/**< Number of F-Engine packets recieved, equal to NUM_ANTENNAS if all packets are received, missing antennas should have their data zeroed*/
         uint64_t fEnginesPresent_u64;/**< The bits in this field from 0 to NUM_ANTENNAS will be set to 1 if the corresponding F-Engine packet has been recieved or 0 otherwise.. */
         std::vector<boost::shared_ptr<spead2::recv::heap>> heaps_v;
@@ -361,7 +448,6 @@ class ReorderPacket: public virtual StreamObject{
             return packetData.offset;
         }
         ~ReorderPacket(){
-          //std::cout << "Cleaning Packet: "<< packetData.offset << std::endl;
           xGpuBuffer->freeMemory_CpuToGpu(packetData.offset);
         }
     private:
@@ -382,7 +468,6 @@ class GPUWrapperPacket: public virtual StreamObject{
             return packetData.offset;
         }
         ~GPUWrapperPacket(){
-          //std::cout << "Destructor Called " << packetData.offset << std::endl;
           xGpuBuffer->freeMemory_GpuToCpu(packetData.offset);
         }
         

@@ -18,8 +18,6 @@ class Buffer{
         std::deque<boost::shared_ptr<BufferPacket> > buffer;
         uint64_t first_timestamp;
         boost::shared_ptr<Spead2RxPacketWrapper> outPacketArmortiser;
-        //std::mutex lock;
-        
 };
 
 #endif

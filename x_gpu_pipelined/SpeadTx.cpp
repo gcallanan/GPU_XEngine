@@ -27,7 +27,6 @@ void SpeadTx::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
                 BaselineProducts_out* base = (BaselineProducts_out*)inPacket_cast->getDataPointer();
                 BaselineProducts_out baselineProductReal_p = base[k*NUM_BASELINES+i];
                 BaselineProducts_out baselineProductImag_p = base[k*NUM_BASELINES+i + NUM_BASELINES*NUM_CHANNELS_PER_XENGINE];
-                //std::cout << baselineIndex << " " << i << " " << k << std::endl;
                 xengRaw_p[baselineIndex] = baselineProductReal_p.product0;
                 xengRaw_p[baselineIndex+1] = baselineProductImag_p.product0;
                 xengRaw_p[baselineIndex+2] = baselineProductReal_p.product1;
@@ -36,13 +35,6 @@ void SpeadTx::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
                 xengRaw_p[baselineIndex+5] = baselineProductImag_p.product2;
                 xengRaw_p[baselineIndex+6] = baselineProductReal_p.product3;
                 xengRaw_p[baselineIndex+7] = baselineProductImag_p.product3;
-                //if(xengRaw_p[baselineIndex]!=0){
-                //    std::cout << k << " " << i << " " << std::endl 
-                //        <<"1: "<< xengRaw_p[baselineIndex]/256.0/1600.0<< " + " << xengRaw_p[baselineIndex+1]/256.0/1600.0<<"j"<< std::endl
-                //        <<"2: "<< xengRaw_p[baselineIndex+2]/256.0/1600.0<< " + " << xengRaw_p[baselineIndex+3]/256.0/1600.0<<"j"<< std::endl
-                //        <<"3: "<< xengRaw_p[baselineIndex+4]/256.0/1600.0<< " + " << xengRaw_p[baselineIndex+5]/256.0/1600.0<<"j"<< std::endl
-                //        <<"4: "<< xengRaw_p[baselineIndex+6]/256.0/1600.0<< " + " << xengRaw_p[baselineIndex+7]/256.0/1600.0<<"j"<< std::endl;
-                //}
                 baselineIndex=baselineIndex+8;
             }
         }
@@ -50,27 +42,18 @@ void SpeadTx::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
         h.add_item(0x1600,inPacket_cast->getTimestamp());
         h.add_item(0x1800,&xengRaw_p,sizeof(xengRaw_p), true);
         accessLock.lock();
-        //std::cout<<"a"<<std::endl;
         stream->async_send_heap(h, [] (const boost::system::error_code &ec, spead2::item_pointer_t bytes_transferred)
         {
-            //std::cout<<"b"<<std::endl;
             accessLock.unlock();
             if (ec){
                 std::cerr << "Transmit Error after " << speadTxSuccessCount << " succesful transmits. Message: "<< ec.message() << '\n';
                 speadTxSuccessCount = 0;
             }else{
                 speadTxSuccessCount++;
-                //std::cout << inPacket_cast->getTimestamp() << std::endl;
-                //std::cout << "Spead heap transmitted succesfully" << std::endl;
             }  
-            //std::cout << "a" << std::endl;
-            //this->clearArray();
-            //std::cout << "b" << std::endl;
         });
         accessLock.lock();
-        //std::cout<<"c"<<std::endl;
         accessLock.unlock();
-        //std::cout<<"d"<<std::endl;
     }
     pipelineCounts.Spead2TxStage++;
 }

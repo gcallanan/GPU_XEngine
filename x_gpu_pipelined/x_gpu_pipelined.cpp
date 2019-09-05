@@ -1,9 +1,9 @@
 /**
- * @file x_gpu_pipelined.cpp
+ * \file x_gpu_pipelined.cpp
  *
- * @brief This is the main file for the MeerKAT GPU X-ENgine program. It launches all the threads in the pipeline
+ * \brief This is the main file for the MeerKAT GPU X-Engine program. It launches all the threads in the pipeline.
  *
- * @author Gareth Callanan
+ * \author Gareth Callanan
  *
  */
 
@@ -20,7 +20,6 @@
 
 //Local Includes
 #include "global_definitions.h"
-
 #include "Spead2Rx.h"
 #include "Buffer.h"
 #include "Reorder.h"
@@ -29,12 +28,12 @@
 #include <emmintrin.h>
 
 
-#define REPORTING_PACKETS_COUNT 100000
+/** \brief  Main function, launches all threads in the pipeline, exits when all other threads close.
+  * \param[in]  argc An integer argument count of the command line arguments
+  * \param[in]  argv An argument vector of the command line arguments
+  * \return an integer 0 upon exit success
+  */
 
-/// \brief  Main function, launches all threads in the pipeline, exits when all other threads close.
-/// \param  argc An integer argument count of the command line arguments
-/// \param  argv An argument vector of the command line arguments
-/// \return an integer 0 upon exit success
 int main(int argc, char** argv){
     //Set up command line arguments
     namespace po = boost::program_options;  
@@ -73,9 +72,9 @@ int main(int argc, char** argv){
     pipelineCounts.heapsReceived=0;
     pipelineCounts.packetsTooLate=0;
 
-    int prevSpead2RxStage=0;//.load(pipelineCounts.Spead2Stage);
-    int prevBufferStage=0;//.load(pipelineCounts.BufferStage);
-    int prevReorderStage=0;//.load(pipelineCounts.ReorderStage);
+    int prevSpead2RxStage=0;
+    int prevBufferStage=0;
+    int prevReorderStage=0;
     int prevGPUWrapperStage=0;
     int prevSpead2TxStage=0;
     int prevPacketsTooLate=0;
@@ -83,7 +82,7 @@ int main(int argc, char** argv){
     boost::shared_ptr<XGpuBuffers> xGpuBuffer = boost::make_shared<XGpuBuffers>();
     //Construct Graph Nodes
     multi_node bufferNode(g,1,Buffer());
-    multi_node reorderNode(g,1,Reorder(xGpuBuffer));//tbb::flow::unlimited
+    multi_node reorderNode(g,1,Reorder(xGpuBuffer));
     multi_node gpuNode(g,1,GPUWrapper(xGpuBuffer));
     multi_node txNode(g,1,SpeadTx(txPort));
     Spead2Rx rx(&bufferNode,rxPort);
@@ -93,28 +92,9 @@ int main(int argc, char** argv){
     tbb::flow::make_edge(tbb::flow::output_port<0>(reorderNode), gpuNode);
     tbb::flow::make_edge(tbb::flow::output_port<0>(gpuNode),txNode);
 
-
-    //Temporary, remove before production
-    int a = 12;
-    int b = 64;
-    std::cout << a << " " << b << std::endl;
-    _mm_stream_si32(&a,b);
-    
-    std::cout << a << " " << b << std::endl;
-    int32_t a_arr[4] = {1,2,3,4};
-
-    std::cout << a_arr[0] << " " << a_arr[1] << " " << a_arr[2] << " " << a_arr[3] << std::endl;
-    __m128i row = _mm_setr_epi32(10,20,30,40);
-    _mm_store_si128((__m128i*)a_arr,row);
-    std::cout << a_arr[0] << " " << a_arr[1] << " " << a_arr[2] << " " << a_arr[3] << std::endl;
-
     //Start Graph
     std::cout << "Starting Graph" << std::endl;
-    
-    int i = 0;    
-    //boost::shared_ptr<StreamObject> spead2RxPacket = rx.receive_packet();
     auto start = std::chrono::high_resolution_clock::now();
-    //while(spead2RxPacket==nullptr || !spead2RxPacket->isEOS()){
     int heapsDropped_prev = pipelineCounts.heapsDropped;
     int heapsReceived_prev = pipelineCounts.heapsReceived;
     while(true){
@@ -143,10 +123,12 @@ int main(int argc, char** argv){
         heapsReceived_prev = pipelineCounts.heapsReceived;
 
         if((pipelineCounts.BufferStage-prevBufferStage) == 0){
-            debug = true;
-            std::cout << "Debug Set to true: "<<debug << std::endl
-                    << std::endl;
-            break;
+            if(((uint)pipelineCounts.Spead2RxStage - prevSpead2RxStage)==0){
+                std::cout << "No packets received from input stream." << std::endl;
+            }else{
+                std::cout << "ERROR: Pipeline has stalled. Exiting Program" << std::endl; 
+                break;//Not strictly necessary, streams should reset when the packet flow resumes, this is just in for debugging as sometimes a pipeline stage crashes and this causes a memory leak.
+            }
         }
 
         prevSpead2RxStage = pipelineCounts.Spead2RxStage;
@@ -158,17 +140,9 @@ int main(int argc, char** argv){
 
         start=now;
 
-        //Rx Code
-        //if(spead2RxPacket!=nullptr){
-        //    if(!bufferNode.try_put(spead2RxPacket)){
-        //        std::cout << "Packet Failed to be passed to buffer class" << std::endl;
-        //   }
-        //}
-
-        //spead2RxPacket = rx.receive_packet();
     }
     std::cout<<"Done Receiving Packets" << std::endl;  
     //g.wait_for_all();
-    std::cout<<"All streams finished processing, exiting program."<<std::endl;
+    //std::cout<<"All streams finished processing, exiting program."<<std::endl;
     return 0;
 }

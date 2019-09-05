@@ -13,16 +13,8 @@ int getBaselineOffset(int ant0, int ant1){
 }
 
 void displayBaseline(BaselineProducts_out* XGpuPacketOut, int i, int j){
-    //int startOffset = getBaselineOffset(i,j);
     for (int k = 0; k < NUM_CHANNELS_PER_XENGINE; k++)
     {
-      //if(XGpuPacketOut[k].p1 != 0 || XGpuPacketOut[k].p2 != 0 || XGpuPacketOut[k].p3 != 0|| XGpuPacketOut[k].p4 != 0){ //|| XGpuPacketOut[k].p5 != 0 || XGpuPacketOut[k].p6 != 0 || XGpuPacketOut[k].p7 != 0|| XGpuPacketOut[k].p8 != 0){
-      //  std::cout << k 
-      //      << " " << XGpuPacketOut[k].p1 << " " << XGpuPacketOut[k].p2
-      //      << " " << XGpuPacketOut[k].p3 << " " << XGpuPacketOut[k].p4
-      //      << std::endl;
-      //}
-      //int baseline_offset = k*NUM_ANTENNAS*(NUM_ANTENNAS/2+1)/2 + i*(i+1)/2+j;
       int index = k*NUM_BASELINES+getBaselineOffset(i,j);
       std::cout<< "Real: "<< i << " " << j << " " << k << " " << index << " " 
           << " "<< (XGpuPacketOut[index].product0/256.0/1600.0) << " " << (XGpuPacketOut[index].product1/256.0/1600.0)
@@ -33,8 +25,5 @@ void displayBaseline(BaselineProducts_out* XGpuPacketOut, int i, int j){
           << " "<< (XGpuPacketOut[index].product0/256.0/1600.0) << " " << (XGpuPacketOut[index].product1/256.0/1600.0)
           << " "<< (XGpuPacketOut[index].product2/256.0/1600.0) << " " << (XGpuPacketOut[index].product3/256.0/1600.0)
           << std::endl;
-    
     }
-    
-    
 }
