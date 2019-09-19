@@ -21,14 +21,23 @@ void Buffer::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::ou
         boost::shared_ptr<Spead2RxPacket> inPacket_cast = boost::dynamic_pointer_cast<Spead2RxPacket>(inPacket_pop);
         uint64_t packet_timestamp = inPacket_cast->getTimestamp();
         
+        //std::cout << packet_timestamp << std::endl;
+
+        //If actual stream is far ahead of expected stream force a resync
         if((packet_timestamp - first_timestamp)/TIMESTAMP_JUMP > RESYNC_LIMIT && (((int64_t)packet_timestamp - (int64_t)first_timestamp)/TIMESTAMP_JUMP) > 0){
+            std::cout << "Timestamp off by "<<(((int64_t)packet_timestamp - (int64_t)first_timestamp)/TIMESTAMP_JUMP)<<" samples, resync triggered in Buffer class" << std::endl;
+            first_timestamp = 0;
+        }
+
+        //If actual stream is far behind the expected stream force a resync
+        if((packet_timestamp - first_timestamp)/TIMESTAMP_JUMP < -RESYNC_LIMIT && (((int64_t)packet_timestamp - (int64_t)first_timestamp)/TIMESTAMP_JUMP) < 0){
             std::cout << "Timestamp off by "<<(((int64_t)packet_timestamp - (int64_t)first_timestamp)/TIMESTAMP_JUMP)<<" samples, resync triggered in Buffer class" << std::endl;
             first_timestamp = 0;
         }
 
         int index = ((int64_t)packet_timestamp - (int64_t)first_timestamp)/TIMESTAMP_JUMP;
         if(first_timestamp>packet_timestamp){
-            //std::cout << "Timestamp smaller than minimum received in Buffer class by "<< index <<", Not Keeping Up" << std::endl;
+            std::cout << "Timestamp smaller than minimum received in Buffer class by "<< index <<", Not Keeping Up" << std::endl;
             pipelineCounts.packetsTooLate++;
         }else{
             if(index>BUFFER_SIZE+PACKET_THRESHOLD_BEFORE_SYNC){//Packet Far Outside of Range
