@@ -29,6 +29,7 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
              if(stageIndex==0){
                 inPacket_cast = boost::dynamic_pointer_cast<BufferPacket>(inPacket_pop);
                 outPacket = boost::make_shared<ReorderPacket>(inPacket_pop->getTimestamp(),false,inPacket_pop->getFrequency(),xGpuBuffer,inPacket_cast);
+                //std::cout<<inPacket_pop->getTimestamp()<<std::endl;
                 if(inPacket_cast->numPacketsReceived() != 64){
                     timeSincePacketsLastMissing = 0;
                 }else{
