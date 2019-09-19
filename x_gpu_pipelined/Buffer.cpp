@@ -48,7 +48,7 @@ void Buffer::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::ou
                         outPacketArmortiser->addPacket(boost::dynamic_pointer_cast<StreamObject>(buffer[0]));
                         if(outPacketArmortiser->getArmortiserSize() >= ARMORTISER_SIZE){
                             if(!std::get<0>(op).try_put(outPacketArmortiser)){
-                                std::cout << "Packet Failed to be passed to buffer class" << std::endl;
+                                //std::cout << "Packet Failed to be passed to reorder class" << std::endl;
                             }
                             outPacketArmortiser = boost::make_shared<Spead2RxPacketWrapper>();
                         }

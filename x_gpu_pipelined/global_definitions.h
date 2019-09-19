@@ -65,8 +65,8 @@
 /** Before packets are handed over to the next stage of the pipeline they are grouped into a larger packet to reduce thread overhead. ARMORTISER_SIZE specifies the number of packets to group*/
 #define ARMORTISER_SIZE 100
 
-/** Same function as ARMORTISER_SIZE but specifically implemented for the transmission from the Reorder to the GPUWrapper class. This class needs to have a smaller ARMORTISER_SIZE as the packets queued here are holding GPU memory which we want to use efficiently */
-#define ARMORTISER_TO_GPU_SIZE 20
+/** Same function as ARMORTISER_SIZE but specifically implemented for the transmission from the Reorder to the GPUWrapper class. This class needs to have a smaller ARMORTISER_SIZE as the packets q ueued here are holding GPU memory which we want to use efficiently */
+#define ARMORTISER_TO_GPU_SIZE 80
 
 //Global Structs
 
@@ -438,7 +438,7 @@ class Spead2RxPacketWrapper: public virtual StreamObject{
 
 class ReorderPacket: public virtual StreamObject{
     public:
-        ReorderPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,boost::shared_ptr<XGpuBuffers> xGpuBuffer): StreamObject(timestamp_u64,eos,frequency),xGpuBuffer(xGpuBuffer),packetData(xGpuBuffer->allocateMemory_CpuToGpu()){
+        ReorderPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,boost::shared_ptr<XGpuBuffers> xGpuBuffer,boost::shared_ptr<BufferPacket> inputData_p): StreamObject(timestamp_u64,eos,frequency),xGpuBuffer(xGpuBuffer),packetData(xGpuBuffer->allocateMemory_CpuToGpu()),inputData_p(inputData_p){
         
         }
         uint8_t * getDataPointer(){
@@ -447,12 +447,19 @@ class ReorderPacket: public virtual StreamObject{
         int getBufferOffset(){
             return packetData.offset;
         }
+        boost::shared_ptr<BufferPacket> getInputData_ptr(){
+          return inputData_p;
+        }
+        void clearInputData(){
+          inputData_p = nullptr;
+        }
         ~ReorderPacket(){
           xGpuBuffer->freeMemory_CpuToGpu(packetData.offset);
         }
     private:
         XGpuInputBufferPacket packetData; 
         boost::shared_ptr<XGpuBuffers> xGpuBuffer;
+        boost::shared_ptr<BufferPacket> inputData_p;
 
 };
 
