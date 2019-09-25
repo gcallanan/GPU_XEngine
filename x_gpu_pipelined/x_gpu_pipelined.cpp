@@ -54,7 +54,7 @@ int main(int argc, char** argv){
     }
 
     #ifndef __AVX__
-    std::cout<<"AVX not supported"<<std::endl;
+        std::cout<<"AVX not supported"<<std::endl;
     #endif
 
     std::string txPort = vm["tx_port"].as<std::string>();
@@ -65,7 +65,9 @@ int main(int argc, char** argv){
     //Multithreading Information
     pipelineCounts.Spead2RxStage=1;
     pipelineCounts.BufferStage=1;
-    pipelineCounts.ReorderStage=1;
+    for (size_t i = 0; i < NUM_REORDER_STAGES; i++){
+        pipelineCounts.ReorderStage[i]=1;
+    }
     pipelineCounts.GPUWRapperStage=1;
     pipelineCounts.Spead2TxStage=1;
     pipelineCounts.heapsDropped=0;
@@ -74,7 +76,10 @@ int main(int argc, char** argv){
 
     int prevSpead2RxStage=0;
     int prevBufferStage=0;
-    int prevReorderStage=0;
+    int prevReorderStage[NUM_REORDER_STAGES];
+    for (size_t i = 0; i < NUM_REORDER_STAGES; i++){
+        prevReorderStage[i]=0;
+    }
     int prevGPUWrapperStage=0;
     int prevSpead2TxStage=0;
     int prevPacketsTooLate=0;
@@ -85,10 +90,12 @@ int main(int argc, char** argv){
     std::vector<boost::shared_ptr<multi_node> > reorderStagesList;
     for (size_t i = 0; i < NUM_REORDER_STAGES; i++)
     {
-        reorderStagesList.push_back(boost::make_shared<multi_node>(g,1,Reorder(xGpuBuffer,i)));
+       reorderStagesList.push_back(boost::make_shared<multi_node>(g,1,Reorder(xGpuBuffer,i)));
     }
-    //multi_node reorderNode0(g,1,Reorder(xGpuBuffer,0));
-    //multi_node reorderNode1(g,1,Reorder(xGpuBuffer,1));
+    //multi_node r1(g,1,Reorder(xGpuBuffer,0));
+    //multi_node r2(g,1,Reorder(xGpuBuffer,1));
+    //multi_node r3(g,1,Reorder(xGpuBuffer,2));
+    //multi_node r4(g,1,Reorder(xGpuBuffer,3));
     multi_node gpuNode(g,1,GPUWrapper(xGpuBuffer));
     multi_node txNode(g,1,SpeadTx(txPort));
     Spead2Rx rx(&bufferNode,rxPort);
@@ -99,9 +106,10 @@ int main(int argc, char** argv){
     {
         tbb::flow::make_edge(tbb::flow::output_port<0>(*reorderStagesList[i-1]), *reorderStagesList[i]);
     }
+    //tbb::flow::make_edge(tbb::flow::output_port<0>(r1), r2);
+    //tbb::flow::make_edge(tbb::flow::output_port<0>(r2), r3);
+    //tbb::flow::make_edge(tbb::flow::output_port<0>(r3), r4);
     tbb::flow::make_edge(tbb::flow::output_port<0>(*reorderStagesList[NUM_REORDER_STAGES-1]), gpuNode);
-    //tbb::flow::make_edge(tbb::flow::output_port<0>(reorderNode0), reorderNode1);
-    //tbb::flow::make_edge(tbb::flow::output_port<0>(reorderNode1), gpuNode);
     tbb::flow::make_edge(tbb::flow::output_port<0>(gpuNode),txNode);
 
     //Start Graph
@@ -120,15 +128,18 @@ int main(int argc, char** argv){
         std::chrono::duration<double> diff = now-start;
         double bits_received_complete = ((double)numPacketsReceivedComplete*NUM_TIME_SAMPLES*NUM_CHANNELS_PER_XENGINE*NUM_POLLS*2*8);
         double bits_received_incomplete = ((double)numPacketsReceivedIncomplete*NUM_TIME_SAMPLES*NUM_CHANNELS_PER_XENGINE*NUM_POLLS*2*8);
-	double num_packets_received_reorder = (double)((uint)pipelineCounts.ReorderStage - prevReorderStage)*64*ARMORTISER_SIZE*NUM_TIME_SAMPLES*NUM_CHANNELS_PER_XENGINE*NUM_POLLS*2*8;
+	    double num_packets_received_reorder = (double)((uint)pipelineCounts.ReorderStage[0] - prevReorderStage[0])*64*ARMORTISER_SIZE*NUM_TIME_SAMPLES*NUM_CHANNELS_PER_XENGINE*NUM_POLLS*2*8;
         std::cout <<"Complete Heaps Rate  : "<<std::fixed<<std::setprecision(2)<< bits_received_complete/1000/1000/1000 << " Gbits received in "<<diff.count()<<" seconds. Data Rate: " <<bits_received_complete/1000/1000/1000/diff.count() << " Gbps" << std::endl;
         std::cout <<"Incomplete Heaps Rate: "<<std::fixed<<std::setprecision(2)<< bits_received_incomplete/1000/1000/1000 << " Gbits received in "<<diff.count()<<" seconds. Data Rate: " <<bits_received_incomplete/1000/1000/1000/diff.count() << " Gbps" << std::endl;
         std::cout <<"Processed Heaps Rate: "<<std::fixed<<std::setprecision(2)<< num_packets_received_reorder/1000/1000/1000 << " Gbits received in "<<diff.count()<<" seconds. Data Rate: " <<num_packets_received_reorder/1000/1000/1000/diff.count() << " Gbps" << std::endl;
         std::cout   << "HeapsReceived                : " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.heapsReceived << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << (uint)pipelineCounts.heapsReceived - heapsReceived_prev <<std::endl
                     << "Spead2Rx    Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.Spead2RxStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << (uint)pipelineCounts.Spead2RxStage - prevSpead2RxStage <<std::endl
                     << "Buffer      Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.BufferStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.BufferStage - prevBufferStage)*64*ARMORTISER_SIZE <<std::endl
-                    << "Reorder     Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.ReorderStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.ReorderStage - prevReorderStage)*64*ARMORTISER_SIZE <<std::endl
-                    << "GPUWrapper  Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.GPUWRapperStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.GPUWRapperStage - prevGPUWrapperStage)*64*ARMORTISER_TO_GPU_SIZE <<std::endl
+                    << "Reorder "<<0<<"   Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.ReorderStage[0] << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.ReorderStage[0] - prevReorderStage[0])*64*ARMORTISER_SIZE <<std::endl;
+        for (size_t i = 1; i < NUM_REORDER_STAGES; i++){
+                    std::cout << "Reorder "<<i<<"   Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.ReorderStage[i] << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.ReorderStage[i] - prevReorderStage[i])*64*ARMORTISER_TO_GPU_SIZE <<std::endl;
+        }
+        std::cout   << "GPUWrapper  Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.GPUWRapperStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.GPUWRapperStage - prevGPUWrapperStage)*64*ARMORTISER_TO_GPU_SIZE <<std::endl
                     << "Spead2Tx    Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.Spead2TxStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.Spead2TxStage - prevSpead2TxStage)*64*1600 <<std::endl
                     << "Incomplete Heaps: "<< (uint)pipelineCounts.heapsDropped <<" heaps out of "<< (uint)pipelineCounts.heapsReceived << ". Drop Rate Inst/Tot: "<<std::setprecision(4) << float(pipelineCounts.heapsDropped-heapsDropped_prev)/float(pipelineCounts.heapsReceived-heapsReceived_prev)*100 <<  "/" << float(pipelineCounts.heapsDropped)/float(pipelineCounts.heapsReceived)*100 <<" %"<< std::endl
                     << "Heaps Too Late: " << (uint)pipelineCounts.packetsTooLate << ". Diff: " << ((uint)pipelineCounts.packetsTooLate - prevPacketsTooLate) << ". Instantaneus Percentage Late:" <<((float)((uint)pipelineCounts.packetsTooLate - prevPacketsTooLate))/((float)(pipelineCounts.heapsReceived-heapsReceived_prev))*100<<"%"<<std::endl
@@ -148,7 +159,9 @@ int main(int argc, char** argv){
 
         prevSpead2RxStage = pipelineCounts.Spead2RxStage;
         prevBufferStage = pipelineCounts.BufferStage;
-        prevReorderStage = pipelineCounts.ReorderStage;
+        for (size_t i = 0; i < NUM_REORDER_STAGES; i++){
+            prevReorderStage[i] = pipelineCounts.ReorderStage[i];
+        }
         prevGPUWrapperStage = pipelineCounts.GPUWRapperStage;
         prevSpead2TxStage = pipelineCounts.Spead2TxStage;
         prevPacketsTooLate = pipelineCounts.packetsTooLate;

@@ -17,6 +17,7 @@ Reorder::Reorder(boost::shared_ptr<XGpuBuffers> xGpuBuffer,int stageIndex):xGpuB
 void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::output_ports_type &op){
 
     boost::shared_ptr<Spead2RxPacketWrapper> inPacketQueue = boost::dynamic_pointer_cast<Spead2RxPacketWrapper>(inPacket);
+    //std::cout << stageIndex << ":"<< inPacketQueue->getArmortiserSize() <<std::endl;
     while(inPacketQueue->getArmortiserSize() > 0)
     {
          boost::shared_ptr<StreamObject> inPacket_pop = inPacketQueue->removePacket();
@@ -63,10 +64,10 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
                         DualPollComplex_in* dest_ptr = &(((DualPollComplex_in*) outPacket->getDataPointer())[time_index*NUM_CHANNELS_PER_XENGINE*NUM_ANTENNAS+channel_index*NUM_ANTENNAS+fengId]);
                         #if USE_SSE == 1
 			                #if BLOCK_SIZE == 16
-                                __m512 reg;// = _mm512_setzero_pd();
+                                volatile __m512 reg;// = _mm512_setzero_pd();
                                 for (size_t block_i = 0; block_i < 4; block_i++)
                                 {   
-				                    __m128i reg_temp = _mm_setzero_si128();
+				                    volatile __m128i reg_temp = _mm_setzero_si128();
 				                    for(size_t avx_word = 0; avx_word < 4; avx_word++){
                                     	if(packetPresent[block_i*4+avx_word]){
                                         	reg_temp = _mm_insert_epi32(reg_temp,*((int32_t*) &inputArray[block_i*4+avx_word][channel_index*NUM_TIME_SAMPLES + time_index]),avx_word);
@@ -130,7 +131,6 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
             }
          }
     }
-    if(stageIndex==0){
-        pipelineCounts.ReorderStage++;
-    }
+    pipelineCounts.ReorderStage[stageIndex]++;
+    //std::cout << stageIndex << ":"<< pipelineCounts.ReorderStage[stageIndex] <<std::endl;
 }

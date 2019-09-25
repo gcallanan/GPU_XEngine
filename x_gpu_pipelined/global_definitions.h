@@ -45,7 +45,6 @@
 #define FFT_SIZE (NUM_CHANNELS_PER_XENGINE*4*NUM_ANTENNAS)
 /** Size of a quadrant - This is used for displaying the baseline as the ordering does not follow a simple pattern. See displayBaseline() and getBaselineOffset() for an implementation of baseline ordering */
 #define QUADRANT_SIZE ((NUM_ANTENNAS/2+1)*(NUM_ANTENNAS/4))
-
 /** Number of baselines being output */
 #define NUM_BASELINES (QUADRANT_SIZE*4)
 
@@ -60,13 +59,21 @@
 #define TIMESTAMP_JUMP (NUM_TIME_SAMPLES*2*FFT_SIZE)
 
 /** Maximum number of accumulations */
-#define DEFAULT_ACCUMULATIONS_THRESHOLD ((int)(1632*1.2))
+#define DEFAULT_ACCUMULATIONS_THRESHOLD ((int)(1632*1.5))
 
 /** Before packets are handed over to the next stage of the pipeline they are grouped into a larger packet to reduce thread overhead. ARMORTISER_SIZE specifies the number of packets to group*/
 #define ARMORTISER_SIZE 100
 
 /** Same function as ARMORTISER_SIZE but specifically implemented for the transmission from the Reorder to the GPUWrapper class. This class needs to have a smaller ARMORTISER_SIZE as the packets q ueued here are holding GPU memory which we want to use efficiently */
-#define ARMORTISER_TO_GPU_SIZE 80
+#define ARMORTISER_TO_GPU_SIZE 10
+
+//Transpose 
+/** Number of stages for the reoder pipeline module. Each stage is processed by a different thread */
+#define NUM_REORDER_STAGES 2
+/** Block size to perform the transpose, must be a power of two.*/
+#define BLOCK_SIZE 8//Must be a power of 2
+/** Use SSE instructions, can either be 1 or 0, SSE instructions greatly increase performance. Block size must be either 4,8 or 16 when SSE is 1. Ensure that your processor supports the instructions. Most processors will support a block size of 4 or 8(SSE or AVX instructions), only newer processors support 16(AVX512 instructions)*/
+#define USE_SSE 1
 
 //Global Structs
 
@@ -76,7 +83,7 @@
 typedef struct PipelineCountsStruct{
    std::atomic<int> Spead2RxStage; /**< Number of packets processed by Spead2Rx pipeline.*/
    std::atomic<int> BufferStage; /**< Number of packets processed by Buffer pipeline stage. */
-   std::atomic<int> ReorderStage; /**< Number of packets processed by by the Reorder pipeline class. */
+   std::atomic<int> ReorderStage[NUM_REORDER_STAGES]; /**< Number of packets processed by by the Reorder pipeline class. */
    std::atomic<int> GPUWRapperStage; /**< Number of packets processed by the GPUWrapper pipeline class. */
    std::atomic<int> Spead2TxStage; /**< Number of packets processed by SpeadTx class. */
    std::atomic<int> heapsDropped; /**< Number of heaps dropped due to not receiving all ethernet packets. */
@@ -209,6 +216,9 @@ class XGpuBuffers{
           structOut.data_ptr = (uint8_t*)(context.array_h + xgpu_info.vecLength*currentIndex);
           structOut.offset = currentIndex;
           lockedLocations_CpuToGpu++;
+          if(lockedLocations_CpuToGpu > DEFAULT_ACCUMULATIONS_THRESHOLD-10){
+            std::cout << "The XGpuBuffers have been overallocated. Pipeline is stalled until they are free." << std::endl;
+          }
           return structOut;
         }
 
@@ -455,6 +465,7 @@ class ReorderPacket: public virtual StreamObject{
         }
         ~ReorderPacket(){
           xGpuBuffer->freeMemory_CpuToGpu(packetData.offset);
+          //std::cout<<"Deleted"<<std::endl;
         }
     private:
         XGpuInputBufferPacket packetData; 

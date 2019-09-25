@@ -1,6 +1,6 @@
 #include "GPUWrapper.h"
 
-GPUWrapper::GPUWrapper(boost::shared_ptr<XGpuBuffers> xGpuBuffer): accumulationsThreshold(1600),numAccumulations(0),xGpuBuffer(xGpuBuffer),storageQueue(){
+GPUWrapper::GPUWrapper(boost::shared_ptr<XGpuBuffers> xGpuBuffer): accumulationsThreshold(400),numAccumulations(0),xGpuBuffer(xGpuBuffer),storageQueue(){
     oldest_timestamp = 0;
 }
 
