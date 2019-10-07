@@ -12,12 +12,12 @@
 class Buffer{
     public:
         Buffer();
-        void operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::output_ports_type &op);
+        void operator()(boost::shared_ptr<PipelinePacket> inPacket, multi_node::output_ports_type &op);
 
     private:
         std::deque<boost::shared_ptr<BufferPacket> > buffer;
         uint64_t first_timestamp;
-        boost::shared_ptr<Spead2RxPacketWrapper> outPacketArmortiser;
+        boost::shared_ptr<PacketArmortiser> outPacketArmortiser;
 };
 
 #endif

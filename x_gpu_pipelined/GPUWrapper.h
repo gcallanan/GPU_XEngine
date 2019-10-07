@@ -12,7 +12,7 @@
 class GPUWrapper{
     public:
         GPUWrapper(boost::shared_ptr<XGpuBuffers> xGpuBuffer);
-        void operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::output_ports_type &op);
+        void operator()(boost::shared_ptr<PipelinePacket> inPacket, multi_node::output_ports_type &op);
         void setAccumulationsThreshold(int accumulationsThreshold);
         int getAccumulationsThreshold();
     
@@ -23,7 +23,7 @@ class GPUWrapper{
         const int finalSyncOp = SYNCOP_DUMP;
         boost::shared_ptr<GPUWrapperPacket> tempGpuWrapperPacket;
         boost::shared_ptr<XGpuBuffers> xGpuBuffer;
-        std::queue<boost::shared_ptr<ReorderPacket>> storageQueue;
+        std::queue<boost::shared_ptr<TransposePacket>> storageQueue;
         int64_t oldest_timestamp;    
 };
 

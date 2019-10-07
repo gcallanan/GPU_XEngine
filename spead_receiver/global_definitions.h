@@ -47,13 +47,8 @@
  */
 typedef struct PipelineCountsStruct{
    std::atomic<int> Spead2RxStage; /**< Number of packets processed by Spead2Rx pipeline.*/
-   std::atomic<int> BufferStage; /**< Number of packets processed by Buffer pipeline stage. */
-   //std::atomic<int> ReorderStage[NUM_REORDER_STAGES]; /**< Number of packets processed by by the Reorder pipeline class. */
-   std::atomic<int> GPUWRapperStage; /**< Number of packets processed by the GPUWrapper pipeline class. */
-   std::atomic<int> Spead2TxStage; /**< Number of packets processed by SpeadTx class. */
    std::atomic<int> heapsDropped; /**< Number of heaps dropped due to not receiving all ethernet packets. */
    std::atomic<int> heapsReceived; /**< Total number of heaps received.(Complete and dropped) */
-   std::atomic<int> packetsTooLate; /**< Packets received by Buffer class that were dropped as the timestamp is too late to arrive */
 } PipelineCounts;
 
 

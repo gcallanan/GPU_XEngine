@@ -12,7 +12,7 @@ SpeadTx::SpeadTx(std::string txPort){
 }
 
 
-void SpeadTx::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::output_ports_type &op){
+void SpeadTx::operator()(boost::shared_ptr<PipelinePacket> inPacket, multi_node::output_ports_type &op){
     if(inPacket->isEOS()){
         std::cout <<"SpeadTx Class: End of stream" << std::endl;
     }else{

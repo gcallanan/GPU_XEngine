@@ -2,13 +2,14 @@
 
 //Define message passing class
 
-#ifndef _Seapd2Rx_H
+#ifndef _Spead2Rx_H
 #define _Spead2Rx_H
 
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <mutex>
 
-
+#define NUM_SPEAD2_RX_THREADS 1
 
 class Spead2Rx{
     class trivial_stream : public spead2::recv::stream
@@ -17,13 +18,16 @@ class Spead2Rx{
             virtual void heap_ready(spead2::recv::live_heap &&heap) override;
             std::promise<void> stop_promise;
             multi_node * nextNodeNested;
-            boost::shared_ptr<Spead2RxPacketWrapper> outPacketArmortiser;
+            boost::shared_ptr<PacketArmortiser> outPacketArmortiser;
         public:
             using spead2::recv::stream::stream;
             virtual void stop_received() override;
             void join();
             void addNextNodePointer(multi_node * nextNodeNested);
-            void addPacketArmortiser(boost::shared_ptr<Spead2RxPacketWrapper> outPacketArmortiser);
+            void addPacketArmortiser(boost::shared_ptr<PacketArmortiser> outPacketArmortiser);
+            #if NUM_SPEAD2_RX_THREADS > 1
+                std::mutex mutex;
+            #endif
 
     };
     public:
@@ -34,9 +38,9 @@ class Spead2Rx{
         trivial_stream stream;
         boost::asio::ip::udp::endpoint endpoint;
         long int n_complete;
-        static boost::shared_ptr<StreamObject> process_heap(boost::shared_ptr<spead2::recv::heap> fheap);
+        static boost::shared_ptr<PipelinePacket> process_heap(boost::shared_ptr<spead2::recv::heap> fheap);
         multi_node * nextNode;
-        boost::shared_ptr<Spead2RxPacketWrapper> outPacketArmortiser;
+        boost::shared_ptr<PacketArmortiser> outPacketArmortiser;
 };
 
 

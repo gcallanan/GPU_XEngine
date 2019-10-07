@@ -1,4 +1,4 @@
-#include "Reorder.h"
+#include "Transpose.h"
 #include <emmintrin.h>
 #include <immintrin.h>
 
@@ -6,30 +6,30 @@
 
 std::atomic<int> timeSincePacketsLastMissing; 
 
-Reorder::Reorder(boost::shared_ptr<XGpuBuffers> xGpuBuffer,int stageIndex):xGpuBuffer(xGpuBuffer),stageIndex(stageIndex){
-    outPacketArmortiser = boost::make_shared<Spead2RxPacketWrapper>();
+Transpose::Transpose(boost::shared_ptr<XGpuBuffers> xGpuBuffer,int stageIndex):xGpuBuffer(xGpuBuffer),stageIndex(stageIndex){
+    outPacketArmortiser = boost::make_shared<PacketArmortiser>();
     timeSincePacketsLastMissing=0;
-    #if  BLOCK_SIZE > (NUM_ANTENNAS/NUM_REORDER_STAGES)
-        #error BLOCK_SIZE needs to be <= (NUM_ANTENNAS/NUM_REORDER_STAGES)
+    #if  BLOCK_SIZE > (NUM_ANTENNAS/NUM_TRANSPOSE_STAGES)
+        #error BLOCK_SIZE needs to be <= (NUM_ANTENNAS/NUM_TRANSPOSE_STAGES)
     #endif
 }
 
-void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::output_ports_type &op){
+void Transpose::operator()(boost::shared_ptr<PipelinePacket> inPacket, multi_node::output_ports_type &op){
 
-    boost::shared_ptr<Spead2RxPacketWrapper> inPacketQueue = boost::dynamic_pointer_cast<Spead2RxPacketWrapper>(inPacket);
+    boost::shared_ptr<PacketArmortiser> inPacketQueue = boost::dynamic_pointer_cast<PacketArmortiser>(inPacket);
     //std::cout << stageIndex << ":"<< inPacketQueue->getArmortiserSize() <<std::endl;
     while(inPacketQueue->getArmortiserSize() > 0)
     {
-         boost::shared_ptr<StreamObject> inPacket_pop = inPacketQueue->removePacket();
+         boost::shared_ptr<PipelinePacket> inPacket_pop = inPacketQueue->removePacket();
          if(inPacket_pop->isEOS()){
-             std::cout <<"Reorder Class: End of stream" << std::endl;
+             std::cout <<"Transpose Class: End of stream" << std::endl;
              std::get<0>(op).try_put(inPacket_pop);
          }else{
              boost::shared_ptr<BufferPacket> inPacket_cast ;
-             boost::shared_ptr<ReorderPacket> outPacket; 
+             boost::shared_ptr<TransposePacket> outPacket; 
              if(stageIndex==0){
                 inPacket_cast = boost::dynamic_pointer_cast<BufferPacket>(inPacket_pop);
-                outPacket = boost::make_shared<ReorderPacket>(inPacket_pop->getTimestamp(),false,inPacket_pop->getFrequency(),xGpuBuffer,inPacket_cast);
+                outPacket = boost::make_shared<TransposePacket>(inPacket_pop->getTimestamp(),false,inPacket_pop->getFrequency(),xGpuBuffer,inPacket_cast);
                 //std::cout<<inPacket_pop->getTimestamp()<<std::endl;
                 if(inPacket_cast->numPacketsReceived() != 64){
                     timeSincePacketsLastMissing = 0;
@@ -37,7 +37,7 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
                     timeSincePacketsLastMissing++;
                 }
              }else{
-                 outPacket = boost::dynamic_pointer_cast<ReorderPacket>(inPacket_pop);
+                 outPacket = boost::dynamic_pointer_cast<TransposePacket>(inPacket_pop);
                  inPacket_cast = outPacket->getInputData_ptr();
              }
             #ifdef DP4A
@@ -45,7 +45,7 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
             #else
             DualPollComplex_in inputSample = {0,0,0,0};
             
-            for (size_t fengId = (NUM_ANTENNAS/NUM_REORDER_STAGES)*(stageIndex); fengId < (NUM_ANTENNAS/NUM_REORDER_STAGES)*(stageIndex+1); fengId+=BLOCK_SIZE)
+            for (size_t fengId = (NUM_ANTENNAS/NUM_TRANSPOSE_STAGES)*(stageIndex); fengId < (NUM_ANTENNAS/NUM_TRANSPOSE_STAGES)*(stageIndex+1); fengId+=BLOCK_SIZE)
             {
                 DualPollComplex_in * inputArray[BLOCK_SIZE];
                 bool packetPresent[BLOCK_SIZE];
@@ -117,9 +117,9 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
 
             }
             #endif
-            outPacketArmortiser->addPacket(boost::dynamic_pointer_cast<StreamObject>(outPacket));
+            outPacketArmortiser->addPacket(boost::dynamic_pointer_cast<PipelinePacket>(outPacket));
             
-            if(stageIndex==NUM_REORDER_STAGES-1){
+            if(stageIndex==NUM_TRANSPOSE_STAGES-1){
                 outPacket->clearInputData();
             }
 
@@ -127,10 +127,9 @@ void Reorder::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::o
                 if(!std::get<0>(op).try_put(outPacketArmortiser)){
                     //std::cout << "Packet Failed to be passed to GPU Wrapper class" << std::endl;
                 }
-                outPacketArmortiser = boost::make_shared<Spead2RxPacketWrapper>();
+                outPacketArmortiser = boost::make_shared<PacketArmortiser>();
             }
          }
     }
-    pipelineCounts.ReorderStage[stageIndex]++;
-    //std::cout << stageIndex << ":"<< pipelineCounts.ReorderStage[stageIndex] <<std::endl;
+    pipelineCounts.TransposeStage[stageIndex]++;
 }

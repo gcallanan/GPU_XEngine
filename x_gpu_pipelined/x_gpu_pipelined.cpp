@@ -22,7 +22,7 @@
 #include "global_definitions.h"
 #include "Spead2Rx.h"
 #include "Buffer.h"
-#include "Reorder.h"
+#include "Transpose.h"
 #include "GPUWrapper.h"
 #include "SpeadTx.h"
 #include <emmintrin.h>
@@ -65,8 +65,8 @@ int main(int argc, char** argv){
     //Multithreading Information
     pipelineCounts.Spead2RxStage=1;
     pipelineCounts.BufferStage=1;
-    for (size_t i = 0; i < NUM_REORDER_STAGES; i++){
-        pipelineCounts.ReorderStage[i]=1;
+    for (size_t i = 0; i < NUM_TRANSPOSE_STAGES; i++){
+        pipelineCounts.TransposeStage[i]=1;
     }
     pipelineCounts.GPUWRapperStage=1;
     pipelineCounts.Spead2TxStage=1;
@@ -76,9 +76,9 @@ int main(int argc, char** argv){
 
     int prevSpead2RxStage=0;
     int prevBufferStage=0;
-    int prevReorderStage[NUM_REORDER_STAGES];
-    for (size_t i = 0; i < NUM_REORDER_STAGES; i++){
-        prevReorderStage[i]=0;
+    int prevTransposeStage[NUM_TRANSPOSE_STAGES];
+    for (size_t i = 0; i < NUM_TRANSPOSE_STAGES; i++){
+        prevTransposeStage[i]=0;
     }
     int prevGPUWrapperStage=0;
     int prevSpead2TxStage=0;
@@ -87,33 +87,29 @@ int main(int argc, char** argv){
     boost::shared_ptr<XGpuBuffers> xGpuBuffer = boost::make_shared<XGpuBuffers>();
     //Construct Graph Nodes
     multi_node bufferNode(g,1,Buffer());
-    std::vector<boost::shared_ptr<multi_node> > reorderStagesList;
-    for (size_t i = 0; i < NUM_REORDER_STAGES; i++)
+    std::vector<boost::shared_ptr<multi_node> > transposeStagesList;
+    for (size_t i = 0; i < NUM_TRANSPOSE_STAGES; i++)
     {
-       reorderStagesList.push_back(boost::make_shared<multi_node>(g,1,Reorder(xGpuBuffer,i)));
+       transposeStagesList.push_back(boost::make_shared<multi_node>(g,1,Transpose(xGpuBuffer,i)));
     }
-    //multi_node r1(g,1,Reorder(xGpuBuffer,0));
-    //multi_node r2(g,1,Reorder(xGpuBuffer,1));
-    //multi_node r3(g,1,Reorder(xGpuBuffer,2));
-    //multi_node r4(g,1,Reorder(xGpuBuffer,3));
     multi_node gpuNode(g,1,GPUWrapper(xGpuBuffer));
     multi_node txNode(g,1,SpeadTx(txPort));
     Spead2Rx rx(&bufferNode,rxPort);
     
     //Construct Edges
-    tbb::flow::make_edge(tbb::flow::output_port<0>(bufferNode), *reorderStagesList[0]);
-    for (size_t i = 1; i < NUM_REORDER_STAGES; i++)
+    tbb::flow::make_edge(tbb::flow::output_port<0>(bufferNode), *transposeStagesList[0]);
+    for (size_t i = 1; i < NUM_TRANSPOSE_STAGES; i++)
     {
-        tbb::flow::make_edge(tbb::flow::output_port<0>(*reorderStagesList[i-1]), *reorderStagesList[i]);
+        tbb::flow::make_edge(tbb::flow::output_port<0>(*transposeStagesList[i-1]), *transposeStagesList[i]);
     }
     //tbb::flow::make_edge(tbb::flow::output_port<0>(r1), r2);
     //tbb::flow::make_edge(tbb::flow::output_port<0>(r2), r3);
     //tbb::flow::make_edge(tbb::flow::output_port<0>(r3), r4);
-    tbb::flow::make_edge(tbb::flow::output_port<0>(*reorderStagesList[NUM_REORDER_STAGES-1]), gpuNode);
+    tbb::flow::make_edge(tbb::flow::output_port<0>(*transposeStagesList[NUM_TRANSPOSE_STAGES-1]), gpuNode);
     tbb::flow::make_edge(tbb::flow::output_port<0>(gpuNode),txNode);
 
     //Start Graph
-    std::cout <<"Reorder Stages: "<< (NUM_ANTENNAS/NUM_REORDER_STAGES) << std::endl;
+    std::cout <<"Transpose Block Size per Stage: "<< (NUM_ANTENNAS/NUM_TRANSPOSE_STAGES) << std::endl;
     std::cout << "Starting Graph" << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
     int heapsDropped_prev = pipelineCounts.heapsDropped;
@@ -128,19 +124,19 @@ int main(int argc, char** argv){
         std::chrono::duration<double> diff = now-start;
         double bits_received_complete = ((double)numPacketsReceivedComplete*NUM_TIME_SAMPLES*NUM_CHANNELS_PER_XENGINE*NUM_POLLS*2*8);
         double bits_received_incomplete = ((double)numPacketsReceivedIncomplete*NUM_TIME_SAMPLES*NUM_CHANNELS_PER_XENGINE*NUM_POLLS*2*8);
-	    double num_packets_received_reorder = (double)((uint)pipelineCounts.ReorderStage[0] - prevReorderStage[0])*64*ARMORTISER_SIZE*NUM_TIME_SAMPLES*NUM_CHANNELS_PER_XENGINE*NUM_POLLS*2*8;
+	    double num_packets_received_transpose = (double)((uint)pipelineCounts.TransposeStage[0] - prevTransposeStage[0])*64*ARMORTISER_SIZE*NUM_TIME_SAMPLES*NUM_CHANNELS_PER_XENGINE*NUM_POLLS*2*8;
         std::cout <<"Complete Heaps Rate  : "<<std::fixed<<std::setprecision(2)<< bits_received_complete/1000/1000/1000 << " Gbits received in "<<diff.count()<<" seconds. Data Rate: " <<bits_received_complete/1000/1000/1000/diff.count() << " Gbps" << std::endl;
         std::cout <<"Incomplete Heaps Rate: "<<std::fixed<<std::setprecision(2)<< bits_received_incomplete/1000/1000/1000 << " Gbits received in "<<diff.count()<<" seconds. Data Rate: " <<bits_received_incomplete/1000/1000/1000/diff.count() << " Gbps" << std::endl;
-        std::cout <<"Processed Heaps Rate: "<<std::fixed<<std::setprecision(2)<< num_packets_received_reorder/1000/1000/1000 << " Gbits received in "<<diff.count()<<" seconds. Data Rate: " <<num_packets_received_reorder/1000/1000/1000/diff.count() << " Gbps" << std::endl;
+        std::cout <<"Processed Heaps Rate: "<<std::fixed<<std::setprecision(2)<< num_packets_received_transpose/1000/1000/1000 << " Gbits received in "<<diff.count()<<" seconds. Data Rate: " <<num_packets_received_transpose/1000/1000/1000/diff.count() << " Gbps" << std::endl;
         std::cout   << "HeapsReceived                : " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.heapsReceived << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << (uint)pipelineCounts.heapsReceived - heapsReceived_prev <<std::endl
                     << "Spead2Rx    Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.Spead2RxStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << (uint)pipelineCounts.Spead2RxStage - prevSpead2RxStage <<std::endl
                     << "Buffer      Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.BufferStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.BufferStage - prevBufferStage)*64*ARMORTISER_SIZE <<std::endl
-                    << "Reorder "<<0<<"   Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.ReorderStage[0] << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.ReorderStage[0] - prevReorderStage[0])*64*ARMORTISER_SIZE <<std::endl;
-        for (size_t i = 1; i < NUM_REORDER_STAGES; i++){
-                    std::cout << "Reorder "<<i<<"   Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.ReorderStage[i] << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.ReorderStage[i] - prevReorderStage[i])*64*ARMORTISER_TO_GPU_SIZE <<std::endl;
+                    << "Transpose "<<0<<"   Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.TransposeStage[0] << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.TransposeStage[0] - prevTransposeStage[0])*64*ARMORTISER_SIZE <<std::endl;
+        for (size_t i = 1; i < NUM_TRANSPOSE_STAGES; i++){
+                    std::cout << "Transpose "<<i<<"   Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.TransposeStage[i] << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.TransposeStage[i] - prevTransposeStage[i])*64*ARMORTISER_TO_GPU_SIZE <<std::endl;
         }
         std::cout   << "GPUWrapper  Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.GPUWRapperStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.GPUWRapperStage - prevGPUWrapperStage)*64*ARMORTISER_TO_GPU_SIZE <<std::endl
-                    << "Spead2Tx    Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.Spead2TxStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.Spead2TxStage - prevSpead2TxStage)*64*1600 <<std::endl
+                    << "Spead2Tx    Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.Spead2TxStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.Spead2TxStage - prevSpead2TxStage)*64*400 <<std::endl
                     << "Incomplete Heaps: "<< (uint)pipelineCounts.heapsDropped <<" heaps out of "<< (uint)pipelineCounts.heapsReceived << ". Drop Rate Inst/Tot: "<<std::setprecision(4) << float(pipelineCounts.heapsDropped-heapsDropped_prev)/float(pipelineCounts.heapsReceived-heapsReceived_prev)*100 <<  "/" << float(pipelineCounts.heapsDropped)/float(pipelineCounts.heapsReceived)*100 <<" %"<< std::endl
                     << "Heaps Too Late: " << (uint)pipelineCounts.packetsTooLate << ". Diff: " << ((uint)pipelineCounts.packetsTooLate - prevPacketsTooLate) << ". Instantaneus Percentage Late:" <<((float)((uint)pipelineCounts.packetsTooLate - prevPacketsTooLate))/((float)(pipelineCounts.heapsReceived-heapsReceived_prev))*100<<"%"<<std::endl
                     << std::endl;
@@ -159,8 +155,8 @@ int main(int argc, char** argv){
 
         prevSpead2RxStage = pipelineCounts.Spead2RxStage;
         prevBufferStage = pipelineCounts.BufferStage;
-        for (size_t i = 0; i < NUM_REORDER_STAGES; i++){
-            prevReorderStage[i] = pipelineCounts.ReorderStage[i];
+        for (size_t i = 0; i < NUM_TRANSPOSE_STAGES; i++){
+            prevTransposeStage[i] = pipelineCounts.TransposeStage[i];
         }
         prevGPUWrapperStage = pipelineCounts.GPUWRapperStage;
         prevSpead2TxStage = pipelineCounts.Spead2TxStage;

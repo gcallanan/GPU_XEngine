@@ -5,19 +5,19 @@
 
 
 Buffer::Buffer(): first_timestamp(0){
-    outPacketArmortiser = boost::make_shared<Spead2RxPacketWrapper>();
+    outPacketArmortiser = boost::make_shared<PacketArmortiser>();
     for (size_t i = 0; i < BUFFER_SIZE; i++)
     {
         buffer.push_front(nullptr);
     }
 }
 
-void Buffer::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::output_ports_type &op){
-    boost::shared_ptr<Spead2RxPacketWrapper> inPacketQueue = boost::dynamic_pointer_cast<Spead2RxPacketWrapper>(inPacket);
+void Buffer::operator()(boost::shared_ptr<PipelinePacket> inPacket, multi_node::output_ports_type &op){
+    boost::shared_ptr<PacketArmortiser> inPacketQueue = boost::dynamic_pointer_cast<PacketArmortiser>(inPacket);
     
 
     while(inPacketQueue->getArmortiserSize() > 0){
-        boost::shared_ptr<StreamObject> inPacket_pop = inPacketQueue->removePacket();
+        boost::shared_ptr<PipelinePacket> inPacket_pop = inPacketQueue->removePacket();
         boost::shared_ptr<Spead2RxPacket> inPacket_cast = boost::dynamic_pointer_cast<Spead2RxPacket>(inPacket_pop);
         uint64_t packet_timestamp = inPacket_cast->getTimestamp();
         
@@ -25,13 +25,13 @@ void Buffer::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::ou
 
         //If actual stream is far ahead of expected stream force a resync
         if((packet_timestamp - first_timestamp)/TIMESTAMP_JUMP > RESYNC_LIMIT && (((int64_t)packet_timestamp - (int64_t)first_timestamp)/TIMESTAMP_JUMP) > 0){
-            std::cout << "Timestamp off by "<<(((int64_t)packet_timestamp - (int64_t)first_timestamp)/TIMESTAMP_JUMP)<<" samples, resync triggered in Buffer class" << std::endl;
+            std::cout << "1. Timestamp off by "<<(((int64_t)packet_timestamp - (int64_t)first_timestamp)/TIMESTAMP_JUMP)<<" samples, resync triggered in Buffer class" << std::endl;
             first_timestamp = 0;
         }
 
         //If actual stream is far behind the expected stream force a resync
-        if((packet_timestamp - first_timestamp)/TIMESTAMP_JUMP < -RESYNC_LIMIT && (((int64_t)packet_timestamp - (int64_t)first_timestamp)/TIMESTAMP_JUMP) < 0){
-            std::cout << "Timestamp off by "<<(((int64_t)packet_timestamp - (int64_t)first_timestamp)/TIMESTAMP_JUMP)<<" samples, resync triggered in Buffer class" << std::endl;
+        if(((int64_t)packet_timestamp - (int64_t)first_timestamp)/TIMESTAMP_JUMP < (-RESYNC_LIMIT) && (((int64_t)packet_timestamp - (int64_t)first_timestamp)/TIMESTAMP_JUMP) < 0){
+            std::cout << "2. Timestamp off by "<<(((int64_t)packet_timestamp - (int64_t)first_timestamp)/TIMESTAMP_JUMP)<<" samples, resync triggered in Buffer class" << std::endl;
             first_timestamp = 0;
         }
 
@@ -54,12 +54,12 @@ void Buffer::operator()(boost::shared_ptr<StreamObject> inPacket, multi_node::ou
                 while((index>=BUFFER_SIZE || buffer[0] == nullptr) && numPops != BUFFER_SIZE){
                     if(buffer[0] != nullptr){
 
-                        outPacketArmortiser->addPacket(boost::dynamic_pointer_cast<StreamObject>(buffer[0]));
+                        outPacketArmortiser->addPacket(boost::dynamic_pointer_cast<PipelinePacket>(buffer[0]));
                         if(outPacketArmortiser->getArmortiserSize() >= ARMORTISER_SIZE){
                             if(!std::get<0>(op).try_put(outPacketArmortiser)){
                                 //std::cout << "Packet Failed to be passed to reorder class" << std::endl;
                             }
-                            outPacketArmortiser = boost::make_shared<Spead2RxPacketWrapper>();
+                            outPacketArmortiser = boost::make_shared<PacketArmortiser>();
                         }
                     }
                     buffer.pop_front();

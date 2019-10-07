@@ -64,12 +64,12 @@
 /** Before packets are handed over to the next stage of the pipeline they are grouped into a larger packet to reduce thread overhead. ARMORTISER_SIZE specifies the number of packets to group*/
 #define ARMORTISER_SIZE 100
 
-/** Same function as ARMORTISER_SIZE but specifically implemented for the transmission from the Reorder to the GPUWrapper class. This class needs to have a smaller ARMORTISER_SIZE as the packets q ueued here are holding GPU memory which we want to use efficiently */
+/** Same function as ARMORTISER_SIZE but specifically implemented for the transmission from the Transpose to the GPUWrapper class. This class needs to have a smaller ARMORTISER_SIZE as the packets q ueued here are holding GPU memory which we want to use efficiently */
 #define ARMORTISER_TO_GPU_SIZE 10
 
 //Transpose 
 /** Number of stages for the reoder pipeline module. Each stage is processed by a different thread */
-#define NUM_REORDER_STAGES 2
+#define NUM_TRANSPOSE_STAGES 2
 /** Block size to perform the transpose, must be a power of two.*/
 #define BLOCK_SIZE 8//Must be a power of 2
 /** Use SSE instructions, can either be 1 or 0, SSE instructions greatly increase performance. Block size must be either 4,8 or 16 when SSE is 1. Ensure that your processor supports the instructions. Most processors will support a block size of 4 or 8(SSE or AVX instructions), only newer processors support 16(AVX512 instructions)*/
@@ -83,7 +83,7 @@
 typedef struct PipelineCountsStruct{
    std::atomic<int> Spead2RxStage; /**< Number of packets processed by Spead2Rx pipeline.*/
    std::atomic<int> BufferStage; /**< Number of packets processed by Buffer pipeline stage. */
-   std::atomic<int> ReorderStage[NUM_REORDER_STAGES]; /**< Number of packets processed by by the Reorder pipeline class. */
+   std::atomic<int> TransposeStage[NUM_TRANSPOSE_STAGES]; /**< Number of packets processed by by the Transpose pipeline class. */
    std::atomic<int> GPUWRapperStage; /**< Number of packets processed by the GPUWrapper pipeline class. */
    std::atomic<int> Spead2TxStage; /**< Number of packets processed by SpeadTx class. */
    std::atomic<int> heapsDropped; /**< Number of heaps dropped due to not receiving all ethernet packets. */
@@ -274,7 +274,7 @@ class XGpuBuffers{
  * 
  * \author Gareth Callanan
  */
-class StreamObject{
+class PipelinePacket{
     public:
         /** 
          * \brief Constructor for standard Stream Object packet
@@ -283,7 +283,7 @@ class StreamObject{
          * \param timestamp_u64 Packet Timestamp
          * \param frequency Base Frequency of packet. Frequency in packet ranges from frequency to frequency+NUM_CHANNELS_PER_XENGINE
          */
-        StreamObject(uint64_t timestamp_u64,bool eos,uint64_t frequency): timestamp_u64(timestamp_u64),eos(eos),frequency(frequency){
+        PipelinePacket(uint64_t timestamp_u64,bool eos,uint64_t frequency): timestamp_u64(timestamp_u64),eos(eos),frequency(frequency){
 
         }
 
@@ -294,7 +294,7 @@ class StreamObject{
          * 
          * \param eos True for EOS, false otherwise
          */
-        StreamObject(bool eos): eos(eos),timestamp_u64(0),frequency(0){
+        PipelinePacket(bool eos): eos(eos),timestamp_u64(0),frequency(0){
 
         }
 
@@ -320,7 +320,7 @@ class StreamObject{
          * 
          * Compares packets according to timestamps
          */
-        friend bool operator<(StreamObject& lhs, StreamObject& rhs)
+        friend bool operator<(PipelinePacket& lhs, PipelinePacket& rhs)
         {
           return lhs.getTimestamp() < rhs.getTimestamp();
         }
@@ -330,7 +330,7 @@ class StreamObject{
          * 
          * Compares packets according to timestamps
          */
-        friend bool operator>(StreamObject& lhs, StreamObject& rhs)
+        friend bool operator>(PipelinePacket& lhs, PipelinePacket& rhs)
         {
           return lhs.getTimestamp() > rhs.getTimestamp();
         }
@@ -343,11 +343,11 @@ class StreamObject{
 /**
  * \brief Packet that is transmitted by the Spead2Rx class
  * 
- * Contains a pointer to a single SPEAD heap. This heap has an associated F-Engine ID on top of the other general StreamObject parameters
+ * Contains a pointer to a single SPEAD heap. This heap has an associated F-Engine ID on top of the other general PipelinePacket parameters
  * 
  * \author Gareth Callanan
  */
-class Spead2RxPacket: public StreamObject
+class Spead2RxPacket: public PipelinePacket
 {
     public:
         /** 
@@ -360,7 +360,7 @@ class Spead2RxPacket: public StreamObject
          * \param payloadPtr_p Pointer to the payload of the heap. This prevents this value having to be re-calculated.
          * \param fEngineId The ID of the F-Engine that this packet is from
          */
-        Spead2RxPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,uint64_t fEngineId,uint8_t *payloadPtr_p, boost::shared_ptr<spead2::recv::heap>fheap): StreamObject(timestamp_u64,eos,frequency),fEngineId(fEngineId),fheap(fheap),payloadPtr_p(payloadPtr_p){
+        Spead2RxPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,uint64_t fEngineId,uint8_t *payloadPtr_p, boost::shared_ptr<spead2::recv::heap>fheap): PipelinePacket(timestamp_u64,eos,frequency),fEngineId(fEngineId),fheap(fheap),payloadPtr_p(payloadPtr_p){
 
         }
         uint64_t getFEngineId(){
@@ -380,9 +380,9 @@ class Spead2RxPacket: public StreamObject
 
 };
 
-class BufferPacket: public virtual StreamObject{
+class BufferPacket: public virtual PipelinePacket{
     public:
-        BufferPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency) : StreamObject(timestamp_u64,eos,frequency),fEnginesPresent_u64(0),numFenginePacketsProcessed(0),heaps_v(){
+        BufferPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency) : PipelinePacket(timestamp_u64,eos,frequency),fEnginesPresent_u64(0),numFenginePacketsProcessed(0),heaps_v(){
             heaps_v.clear();
             heaps_v.reserve(NUM_ANTENNAS);
             data_pointers_v.clear();
@@ -426,15 +426,15 @@ class BufferPacket: public virtual StreamObject{
         std::vector<uint8_t*> data_pointers_v;
 };
 
-class Spead2RxPacketWrapper: public virtual StreamObject{
+class PacketArmortiser: public virtual PipelinePacket{
     public:
-      Spead2RxPacketWrapper(): StreamObject(false){
+      PacketArmortiser(): PipelinePacket(false){
       }
-      void addPacket(boost::shared_ptr<StreamObject> packetIn){
+      void addPacket(boost::shared_ptr<PipelinePacket> packetIn){
         packets.push_back(packetIn);
       }
-      boost::shared_ptr<StreamObject> removePacket(){
-        boost::shared_ptr<StreamObject> outPacket = packets.front();
+      boost::shared_ptr<PipelinePacket> removePacket(){
+        boost::shared_ptr<PipelinePacket> outPacket = packets.front();
         packets.pop_front();
         return outPacket;
       }
@@ -442,13 +442,13 @@ class Spead2RxPacketWrapper: public virtual StreamObject{
         return packets.size();
       }
     private:
-      std::deque<boost::shared_ptr<StreamObject>> packets;
+      std::deque<boost::shared_ptr<PipelinePacket>> packets;
 
 };
 
-class ReorderPacket: public virtual StreamObject{
+class TransposePacket: public virtual PipelinePacket{
     public:
-        ReorderPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,boost::shared_ptr<XGpuBuffers> xGpuBuffer,boost::shared_ptr<BufferPacket> inputData_p): StreamObject(timestamp_u64,eos,frequency),xGpuBuffer(xGpuBuffer),packetData(xGpuBuffer->allocateMemory_CpuToGpu()),inputData_p(inputData_p){
+        TransposePacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,boost::shared_ptr<XGpuBuffers> xGpuBuffer,boost::shared_ptr<BufferPacket> inputData_p): PipelinePacket(timestamp_u64,eos,frequency),xGpuBuffer(xGpuBuffer),packetData(xGpuBuffer->allocateMemory_CpuToGpu()),inputData_p(inputData_p){
         
         }
         uint8_t * getDataPointer(){
@@ -463,7 +463,7 @@ class ReorderPacket: public virtual StreamObject{
         void clearInputData(){
           inputData_p = nullptr;
         }
-        ~ReorderPacket(){
+        ~TransposePacket(){
           xGpuBuffer->freeMemory_CpuToGpu(packetData.offset);
           //std::cout<<"Deleted"<<std::endl;
         }
@@ -474,9 +474,9 @@ class ReorderPacket: public virtual StreamObject{
 
 };
 
-class GPUWrapperPacket: public virtual StreamObject{
+class GPUWrapperPacket: public virtual PipelinePacket{
     public:
-        GPUWrapperPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,boost::shared_ptr<XGpuBuffers> xGpuBuffer): StreamObject(timestamp_u64,eos,frequency),xGpuBuffer(xGpuBuffer), packetData(xGpuBuffer->allocateMemory_GpuToCpu()){
+        GPUWrapperPacket(uint64_t timestamp_u64,bool eos,uint64_t frequency,boost::shared_ptr<XGpuBuffers> xGpuBuffer): PipelinePacket(timestamp_u64,eos,frequency),xGpuBuffer(xGpuBuffer), packetData(xGpuBuffer->allocateMemory_GpuToCpu()){
         
         }
         uint8_t * getDataPointer(){
@@ -496,11 +496,11 @@ class GPUWrapperPacket: public virtual StreamObject{
 };
 
 
-typedef tbb::flow::multifunction_node<boost::shared_ptr<StreamObject>, tbb::flow::tuple<boost::shared_ptr<StreamObject> > > multi_node;
+typedef tbb::flow::multifunction_node<boost::shared_ptr<PipelinePacket>, tbb::flow::tuple<boost::shared_ptr<PipelinePacket> > > multi_node;
 
-struct StreamObjectPointerCompare
+struct PipelinePacketPointerCompare
 {
-    bool operator()(const boost::shared_ptr<StreamObject>& lhs, const boost::shared_ptr<StreamObject>& rhs)
+    bool operator()(const boost::shared_ptr<PipelinePacket>& lhs, const boost::shared_ptr<PipelinePacket>& rhs)
     {
         return *lhs > *rhs;
     }

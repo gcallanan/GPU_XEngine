@@ -56,13 +56,10 @@ int main(int argc, char** argv){
 
     //Multithreading Information
     pipelineCounts.Spead2RxStage=1;
-    pipelineCounts.BufferStage=1;
     pipelineCounts.heapsDropped=0;
     pipelineCounts.heapsReceived=0;
-    pipelineCounts.packetsTooLate=0;
 
     int prevSpead2RxStage=0;
-    int prevPacketsTooLate=0;
 
     Spead2Rx rx(rxPort);
     
@@ -85,13 +82,11 @@ int main(int argc, char** argv){
         std::cout   << "HeapsReceived                : " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.heapsReceived << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << (uint)pipelineCounts.heapsReceived - heapsReceived_prev <<std::endl
                    << "Spead2Rx    Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.Spead2RxStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << (uint)pipelineCounts.Spead2RxStage - prevSpead2RxStage <<std::endl
                    << "Incomplete Heaps: "<< (uint)pipelineCounts.heapsDropped <<" heaps out of "<< (uint)pipelineCounts.heapsReceived << ". Drop Rate Inst/Tot: "<<std::setprecision(4) << float(pipelineCounts.heapsDropped-heapsDropped_prev)/float(pipelineCounts.heapsReceived-heapsReceived_prev)*100 <<  "/" << float(pipelineCounts.heapsDropped)/float(pipelineCounts.heapsReceived)*100 <<" %"<< std::endl
-                   << "Heaps Too Late: " << (uint)pipelineCounts.packetsTooLate << ". Diff: " << ((uint)pipelineCounts.packetsTooLate - prevPacketsTooLate) << ". Instantaneus Percentage Late:" <<((float)((uint)pipelineCounts.packetsTooLate - prevPacketsTooLate))/((float)(pipelineCounts.heapsReceived-heapsReceived_prev))*100<<"%"<<std::endl
                    << std::endl;
 
         heapsDropped_prev = pipelineCounts.heapsDropped;
         heapsReceived_prev = pipelineCounts.heapsReceived;
         prevSpead2RxStage = pipelineCounts.Spead2RxStage;
-        prevPacketsTooLate = pipelineCounts.packetsTooLate;
         start=now;
 
     }

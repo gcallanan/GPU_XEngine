@@ -2,16 +2,16 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
-#define NUM_THREADS 1
 
-Spead2Rx::Spead2Rx(multi_node * nextNode, int rxPort): worker(NUM_THREADS),stream(worker),n_complete(0),endpoint(boost::asio::ip::address_v4::any(), rxPort),nextNode(nextNode){
+
+Spead2Rx::Spead2Rx(multi_node * nextNode, int rxPort): worker(NUM_SPEAD2_RX_THREADS),stream(worker),n_complete(0),endpoint(boost::asio::ip::address_v4::any(), rxPort),nextNode(nextNode){
     stream.addNextNodePointer(nextNode);
     stream.emplace_reader<spead2::recv::udp_reader>(endpoint, spead2::recv::udp_reader::default_max_size, 8 * 1024 * 1024);
-    outPacketArmortiser = boost::make_shared<Spead2RxPacketWrapper>();
+    outPacketArmortiser = boost::make_shared<PacketArmortiser>();
     stream.addPacketArmortiser(outPacketArmortiser);
 }
 
-boost::shared_ptr<StreamObject> Spead2Rx::process_heap(boost::shared_ptr<spead2::recv::heap> fheap){
+boost::shared_ptr<PipelinePacket> Spead2Rx::process_heap(boost::shared_ptr<spead2::recv::heap> fheap){
     const auto &items = fheap->get_items();
     uint64_t fengId;
     uint64_t timestamp;
@@ -56,19 +56,25 @@ void Spead2Rx::trivial_stream::heap_ready(spead2::recv::live_heap &&heap)
     pipelineCounts.heapsReceived++;
     if (heap.is_complete())
     {   
-        boost::shared_ptr<StreamObject> spead2RxPacket = process_heap(boost::make_shared<spead2::recv::heap>(boost::move(heap)));
+        boost::shared_ptr<PipelinePacket> spead2RxPacket = process_heap(boost::make_shared<spead2::recv::heap>(boost::move(heap)));
         if(spead2RxPacket!=nullptr){
           if(spead2RxPacket->isEOS()){
             std::cout << "End of stream packet received"<< std::endl;
           }else{
+            #if NUM_SPEAD2_RX_THREADS > 1
+              mutex.lock();
+            #endif
             pipelineCounts.Spead2RxStage++;
             outPacketArmortiser->addPacket(spead2RxPacket);
             if(outPacketArmortiser->getArmortiserSize() >= NUM_ANTENNAS*ARMORTISER_SIZE){
               if(!nextNodeNested->try_put(outPacketArmortiser)){
                 std::cout << "Packet Failed to be passed to Buffer class" << std::endl;
               }
-              outPacketArmortiser = boost::make_shared<Spead2RxPacketWrapper>();
+              outPacketArmortiser = boost::make_shared<PacketArmortiser>();
             }
+            #if NUM_SPEAD2_RX_THREADS > 1
+              mutex.unlock();
+            #endif
           }
         }
     }else{
@@ -93,6 +99,6 @@ void Spead2Rx::trivial_stream::addNextNodePointer(multi_node * nextNode){
     this->nextNodeNested=nextNode;
 }
 
-void Spead2Rx::trivial_stream::addPacketArmortiser(boost::shared_ptr<Spead2RxPacketWrapper> outPacketArmortiser){
+void Spead2Rx::trivial_stream::addPacketArmortiser(boost::shared_ptr<PacketArmortiser> outPacketArmortiser){
     this->outPacketArmortiser = outPacketArmortiser;
 }
