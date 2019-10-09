@@ -50,7 +50,7 @@
 
 
 /** Number of  consecutive timestamps the Buffer class will have room to buffer */
-#define BUFFER_SIZE 20
+#define BUFFER_SIZE 40
 
 /** If the incoming packet has a timestamp which is greater than RESYNC_LIMIT then a resync is triggered */
 #define RESYNC_LIMIT 200

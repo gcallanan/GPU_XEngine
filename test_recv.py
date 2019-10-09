@@ -29,6 +29,8 @@ logging.basicConfig(level=logging.INFO)
 NUM_CHANNELS_PER_XENGINE=16
 NUM_BASELINES=2112
 
+print("Receive Output from GPU Correlator")
+
 parser = argparse.ArgumentParser(
     description='Monitor and plot incoming X-Engine stream data.',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -61,7 +63,7 @@ def getBaseline(data_arr, i, j, polarisationProduct,poll):
     array = [0]*16
     for k in range(0,NUM_CHANNELS_PER_XENGINE):
         baseline_index = getBaselineOffset(i,j)
-        array[k] = data_arr[k][baseline_index][polarisationProduct][poll]/256/1600
+        array[k] = data_arr[k][baseline_index][polarisationProduct][poll]/256/1600*4
 #        print(k,baseline_index,i,j)
 #        print(data_arr[k][baseline_index][0][0]/256/1600)
     #print(array)
@@ -138,10 +140,11 @@ ax4.legend()
 ax4.set_xlabel('Frequency Channel')
 fig.show()
 
-
+print("Ready")
 ig = spead2.ItemGroup()
 num_heaps = 0
 for heap in stream_recv:
+    print("Received")
     if(descriptor_sent==False):
         stream_send.send_heap(ig_send.get_heap())
         descriptor_sent=True
