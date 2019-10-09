@@ -14,11 +14,12 @@
 #include "tbb/flow_graph.h"
 #include "global_definitions.h"
 #include "PipelinePackets.h"
+#include "PipelineStages.h"
 
-class SpeadTx{
+class SpeadTx : public PipelineStage{
     public:
         SpeadTx(std::string txPort);
-        void operator()(boost::shared_ptr<PipelinePacket> inPacket, multi_node::output_ports_type &op);     
+        OutputPacketQueuePtr processPacket(boost::shared_ptr<PipelinePacket> inPacket);    
     private:
         boost::shared_ptr<spead2::thread_pool> tp;
         boost::shared_ptr<boost::asio::ip::udp::resolver> resolver;

@@ -3,18 +3,18 @@
 
 #define MINIMUM_QUEUE_SIZE 100
 
-#include "tbb/flow_graph.h"
 #include "global_definitions.h"
 #include "xgpu.h"
 #include <queue>
 #include "XGpuBufferManager.h"
 #include "PipelinePackets.h"
+#include "PipelineStages.h"
 
 
-class GPUWrapper{
+class GPUWrapper : public PipelineStage{
     public:
         GPUWrapper(boost::shared_ptr<XGpuBufferManager> xGpuBufferManager);
-        void operator()(boost::shared_ptr<PipelinePacket> inPacket, multi_node::output_ports_type &op);
+        OutputPacketQueuePtr processPacket(boost::shared_ptr<PipelinePacket> inPacket);
         void setAccumulationsThreshold(int accumulationsThreshold);
         int getAccumulationsThreshold();
     

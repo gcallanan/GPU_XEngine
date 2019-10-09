@@ -90,7 +90,7 @@ class XGpuBufferManager{
           structOut.offset = currentIndex;
           lockedLocations_CpuToGpu++;
           if(lockedLocations_CpuToGpu > DEFAULT_ACCUMULATIONS_THRESHOLD-10){
-            std::cout << "The XGpuBuffers have been overallocated. Pipeline is stalled until they are free." << std::endl;
+            std::cout << "The XGpuBuffers to the Device have been overallocated. Pipeline is stalled until they are free." << std::endl;
           }
           return structOut;
         }
@@ -100,6 +100,7 @@ class XGpuBufferManager{
          * \param[in] blockToFree The index of the object to free. This index is the XGpuInputBufferPacket.offset value.
          */
         void freeMemory_CpuToGpu(int blockToFree){
+          //std::cout<<"cleared" <<std::endl;
           mutex_array_CpuToGpu[blockToFree].unlock();
           lockedLocations_CpuToGpu--;
         }
