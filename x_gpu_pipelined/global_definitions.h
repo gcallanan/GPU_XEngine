@@ -95,10 +95,10 @@ typedef struct PipelineCountsStruct{
  * Struct storing dual pol complex samples as received by the F-Engines
  */
 typedef struct DualPollComplexStruct_in {
-  int8_t realPol0;/**< Pol 0 Real Memeber. */
-  int8_t imagPol0;/**< Pol 0 Imaginary Memeber. */
-  int8_t realPol1;/**< Pol 1 Real Memeber. */
-  int8_t imagPol1;/**< Pol 1 Imaginary Memeber. */
+  int8_t realPol0;/**< Pol 0 Real Component. */
+  int8_t imagPol0;/**< Pol 0 Imaginary Component. */
+  int8_t realPol1;/**< Pol 1 Real Component. */
+  int8_t imagPol1;/**< Pol 1 Imaginary Component. */
 } DualPollComplex_in;
 
 /**

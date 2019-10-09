@@ -8,19 +8,20 @@
 #include <mutex>
 #include "XGpuBufferManager.h"
 #include "PipelinePackets.h"
+#include "PipelineStages.h"
 
 #define PACKET_THRESHOLD_BEFORE_SYNC 20 
 
-class Buffer{
+class Buffer : public PipelineStage{
     public:
         Buffer();
-        void operator()(boost::shared_ptr<PipelinePacket> inPacket, multi_node::output_ports_type &op);
+        OutputPacketQueuePtr processPacket(boost::shared_ptr<PipelinePacket> inPacket);
 
     private:
         std::deque<boost::shared_ptr<BufferPacket> > buffer;
         uint64_t first_timestamp;
-        boost::shared_ptr<PacketArmortiser> outPacketArmortiser;
 };
+
 
 #endif
 

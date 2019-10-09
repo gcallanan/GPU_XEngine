@@ -29,7 +29,6 @@ class SpeadRx{
             #if NUM_SPEAD2_RX_THREADS > 1
                 std::mutex mutex;
             #endif
-
     };
     public:
         SpeadRx(multi_node * nextNode,int rxPort);

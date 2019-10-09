@@ -103,9 +103,6 @@ int main(int argc, char** argv){
     {
         tbb::flow::make_edge(tbb::flow::output_port<0>(*transposeStagesList[i-1]), *transposeStagesList[i]);
     }
-    //tbb::flow::make_edge(tbb::flow::output_port<0>(r1), r2);
-    //tbb::flow::make_edge(tbb::flow::output_port<0>(r2), r3);
-    //tbb::flow::make_edge(tbb::flow::output_port<0>(r3), r4);
     tbb::flow::make_edge(tbb::flow::output_port<0>(*transposeStagesList[NUM_TRANSPOSE_STAGES-1]), gpuNode);
     tbb::flow::make_edge(tbb::flow::output_port<0>(gpuNode),txNode);
 
@@ -131,7 +128,7 @@ int main(int argc, char** argv){
         std::cout <<"Processed Heaps Rate: "<<std::fixed<<std::setprecision(2)<< num_packets_received_transpose/1000/1000/1000 << " Gbits received in "<<diff.count()<<" seconds. Data Rate: " <<num_packets_received_transpose/1000/1000/1000/diff.count() << " Gbps" << std::endl;
         std::cout   << "HeapsReceived                : " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.heapsReceived << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << (uint)pipelineCounts.heapsReceived - heapsReceived_prev <<std::endl
                     << "SpeadRx    Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.SpeadRxStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << (uint)pipelineCounts.SpeadRxStage - prevSpeadRxStage <<std::endl
-                    << "Buffer      Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.BufferStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.BufferStage - prevBufferStage)*64*ARMORTISER_SIZE <<std::endl
+                    << "Buffer      Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.BufferStage << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.BufferStage - prevBufferStage) <<std::endl
                     << "Transpose "<<0<<"   Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.TransposeStage[0] << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.TransposeStage[0] - prevTransposeStage[0])*64*ARMORTISER_SIZE <<std::endl;
         for (size_t i = 1; i < NUM_TRANSPOSE_STAGES; i++){
                     std::cout << "Transpose "<<i<<"   Packets Processed: " << std::setfill(' ') << std::setw(10) << (uint)pipelineCounts.TransposeStage[i] << " Normalised Diff:"<< std::setfill(' ') << std::setw(7) << ((uint)pipelineCounts.TransposeStage[i] - prevTransposeStage[i])*64*ARMORTISER_TO_GPU_SIZE <<std::endl;
