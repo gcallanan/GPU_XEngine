@@ -2,11 +2,9 @@
 #define _BUFFER_H
 
 #include <deque>
-#include "global_definitions.h"
 #include <cstdio>
-#include "tbb/flow_graph.h"
-#include <mutex>
-#include "XGpuBufferManager.h"
+
+#include "global_definitions.h"
 #include "PipelinePackets.h"
 #include "PipelineStages.h"
 

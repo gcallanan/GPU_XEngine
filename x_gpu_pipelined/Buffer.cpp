@@ -1,10 +1,8 @@
-#include "Buffer.h"
-#include "global_definitions.h"
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
-
+#include "Buffer.h"
 
 Buffer::Buffer(): first_timestamp(0){
     for (size_t i = 0; i < BUFFER_SIZE; i++)
@@ -15,7 +13,7 @@ Buffer::Buffer(): first_timestamp(0){
 
 OutputPacketQueuePtr Buffer::processPacket(boost::shared_ptr<PipelinePacket> inPacket){
     OutputPacketQueuePtr outPacketQueue = boost::make_shared<OutputPacketQueue>();
-    boost::shared_ptr<SpeadRxPacket> inPacket_cast = boost::dynamic_pointer_cast<SpeadRxPacket>(inPacket);
+    boost::shared_ptr<SpeadRxPacket> inPacket_cast = boost::static_pointer_cast<SpeadRxPacket>(inPacket);
     uint64_t packet_timestamp = inPacket_cast->getTimestamp();
     
     //std::cout << packet_timestamp << std::endl;
@@ -50,7 +48,7 @@ OutputPacketQueuePtr Buffer::processPacket(boost::shared_ptr<PipelinePacket> inP
             int numPops = 0;
             while((index>=BUFFER_SIZE || buffer[0] == nullptr) && numPops != BUFFER_SIZE){
                 if(buffer[0] != nullptr){
-                    outPacketQueue->push_back(boost::dynamic_pointer_cast<PipelinePacket>(buffer[0]));
+                    outPacketQueue->push_back(buffer[0]);
                 }
                 buffer.pop_front();
                 buffer.push_back(nullptr);

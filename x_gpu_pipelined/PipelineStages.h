@@ -25,16 +25,14 @@ class PipelineStage{
         void operator()(boost::shared_ptr<PipelinePacket> inPacket, multi_node::output_ports_type &op){
             boost::shared_ptr<PacketArmortiser> inPacketQueue = boost::dynamic_pointer_cast<PacketArmortiser>(inPacket);
             
-
             while(inPacketQueue->getArmortiserSize() > 0){
                 boost::shared_ptr<PipelinePacket> inPacket_pop = inPacketQueue->removePacket();
                 OutputPacketQueuePtr outPacketQueue = processPacket(inPacket_pop);
                 for(boost::shared_ptr<PipelinePacket> outPacket: *outPacketQueue){
-                    outPacket->getTimestamp();
                     outPacketArmortiser->addPacket(boost::dynamic_pointer_cast<PipelinePacket>(outPacket));
                     if(outPacketArmortiser->getArmortiserSize() >= this->armortiserMaxSize){
                         if(!std::get<0>(op).try_put(outPacketArmortiser)){
-                            //std::cout << "Packet Failed to be passed to reorder class" << std::endl;
+                            //std::cout << "Packet Failed to be passed to next class" << std::endl;
                         }
                         outPacketArmortiser = boost::make_shared<PacketArmortiser>();
                     }
@@ -49,6 +47,8 @@ class PipelineStage{
 
     private:
         boost::shared_ptr<PacketArmortiser> outPacketArmortiser;
+
+    protected:
         int armortiserMaxSize = ARMORTISER_SIZE;
 
 };
