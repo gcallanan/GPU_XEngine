@@ -1,6 +1,6 @@
 #include "GPUWrapper.h"
 
-GPUWrapper::GPUWrapper(boost::shared_ptr<XGpuBuffers> xGpuBuffer): accumulationsThreshold(400),numAccumulations(0),xGpuBuffer(xGpuBuffer),storageQueue(){
+GPUWrapper::GPUWrapper(boost::shared_ptr<XGpuBufferManager> xGpuBufferManager): accumulationsThreshold(400),numAccumulations(0),xGpuBufferManager(xGpuBufferManager),storageQueue(){
     oldest_timestamp = 0;
 }
 
@@ -28,10 +28,10 @@ void GPUWrapper::operator()(boost::shared_ptr<PipelinePacket> inPacket, multi_no
 
         boost::shared_ptr<TransposePacket> inPacket_cast = boost::dynamic_pointer_cast<TransposePacket>(inPacket_pop);
         int xgpu_error = 0;
-        XGPUContext * context = xGpuBuffer->getXGpuContext_p();
+        XGPUContext * context = xGpuBufferManager->getXGpuContext_p();
 
         if(numAccumulations==0){
-            tempGpuWrapperPacket = boost::make_shared<GPUWrapperPacket>(inPacket_cast->getTimestamp(),false,inPacket_cast->getFrequency(),xGpuBuffer);
+            tempGpuWrapperPacket = boost::make_shared<GPUWrapperPacket>(inPacket_cast->getTimestamp(),false,inPacket_cast->getFrequency(),xGpuBufferManager);
         }
         
         context->input_offset = inPacket_cast->getBufferOffset()*NUM_CHANNELS_PER_XENGINE*NUM_ANTENNAS*NUM_TIME_SAMPLES;

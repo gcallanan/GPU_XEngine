@@ -2,16 +2,17 @@
 
 //Define message passing class
 
-#ifndef _Spead2Rx_H
-#define _Spead2Rx_H
+#ifndef _SpeadRx_H
+#define _SpeadRx_H
 
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <mutex>
+#include "PipelinePackets.h"
 
 #define NUM_SPEAD2_RX_THREADS 1
 
-class Spead2Rx{
+class SpeadRx{
     class trivial_stream : public spead2::recv::stream
     {
         private:
@@ -31,7 +32,7 @@ class Spead2Rx{
 
     };
     public:
-        Spead2Rx(multi_node * nextNode,int rxPort);
+        SpeadRx(multi_node * nextNode,int rxPort);
         int getNumCompletePackets();
     private:
         spead2::thread_pool worker;

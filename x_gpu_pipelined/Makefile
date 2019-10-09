@@ -35,7 +35,7 @@ RPATH =
 LIBXGPU = libxgpu.dll
 else
 
-NVCCFLAGS = -std=c++11 -Xcompiler -D_REENTRANT -Xcompiler -Wall -Xcompiler -Wno-unused-function -ftz=true -Xcompiler -mavx512f 
+NVCCFLAGS = -std=c++11 -Xcompiler -D_REENTRANT -Xcompiler -Wall -Xcompiler -Wno-unused-function -ftz=true -Xcompiler -mavx
 #-Xcompiler -march=skylake
 
 ifneq ($(strip $(OSTYPE)),osx)
@@ -164,7 +164,7 @@ ifneq "$V" "1"
 	VERBOSE=@
 endif
 
-CUDA_CORRELATOR_OBJS  = x_gpu_pipelined.o Spead2Rx.o Buffer.o Transpose.o global_definitions.o GPUWrapper.o SpeadTx.o
+CUDA_CORRELATOR_OBJS  = x_gpu_pipelined.o SpeadRx.o Buffer.o Transpose.o global_definitions.o GPUWrapper.o SpeadTx.o
 
 XGPUINFO_OBJS  = xgpuinfo.o
 

@@ -7,11 +7,13 @@
 #include "global_definitions.h"
 #include "xgpu.h"
 #include <queue>
+#include "XGpuBufferManager.h"
+#include "PipelinePackets.h"
 
 
 class GPUWrapper{
     public:
-        GPUWrapper(boost::shared_ptr<XGpuBuffers> xGpuBuffer);
+        GPUWrapper(boost::shared_ptr<XGpuBufferManager> xGpuBufferManager);
         void operator()(boost::shared_ptr<PipelinePacket> inPacket, multi_node::output_ports_type &op);
         void setAccumulationsThreshold(int accumulationsThreshold);
         int getAccumulationsThreshold();
@@ -22,7 +24,7 @@ class GPUWrapper{
         const int syncOp = SYNCOP_SYNC_TRANSFER;
         const int finalSyncOp = SYNCOP_DUMP;
         boost::shared_ptr<GPUWrapperPacket> tempGpuWrapperPacket;
-        boost::shared_ptr<XGpuBuffers> xGpuBuffer;
+        boost::shared_ptr<XGpuBufferManager> xGpuBufferManager;
         std::queue<boost::shared_ptr<TransposePacket>> storageQueue;
         int64_t oldest_timestamp;    
 };

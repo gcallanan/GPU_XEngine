@@ -55,5 +55,5 @@ void SpeadTx::operator()(boost::shared_ptr<PipelinePacket> inPacket, multi_node:
         accessLock.lock();
         accessLock.unlock();
     }
-    pipelineCounts.Spead2TxStage++;
+    pipelineCounts.SpeadTxStage++;
 }

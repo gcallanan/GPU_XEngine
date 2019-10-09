@@ -1,11 +1,13 @@
+#ifndef _BUFFER_H
+#define _BUFFER_H
+
 #include <deque>
 #include "global_definitions.h"
 #include <cstdio>
 #include "tbb/flow_graph.h"
 #include <mutex>
-
-#ifndef _BUFFER_H
-#define _BUFFER_H
+#include "XGpuBufferManager.h"
+#include "PipelinePackets.h"
 
 #define PACKET_THRESHOLD_BEFORE_SYNC 20 
 

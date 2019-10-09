@@ -13,6 +13,7 @@
 
 #include "tbb/flow_graph.h"
 #include "global_definitions.h"
+#include "PipelinePackets.h"
 
 class SpeadTx{
     public:

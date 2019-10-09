@@ -6,7 +6,7 @@
 
 std::atomic<int> timeSincePacketsLastMissing; 
 
-Transpose::Transpose(boost::shared_ptr<XGpuBuffers> xGpuBuffer,int stageIndex):xGpuBuffer(xGpuBuffer),stageIndex(stageIndex){
+Transpose::Transpose(boost::shared_ptr<XGpuBufferManager> xGpuBufferManager,int stageIndex):xGpuBufferManager(xGpuBufferManager),stageIndex(stageIndex){
     outPacketArmortiser = boost::make_shared<PacketArmortiser>();
     timeSincePacketsLastMissing=0;
     #if  BLOCK_SIZE > (NUM_ANTENNAS/NUM_TRANSPOSE_STAGES)
@@ -29,7 +29,7 @@ void Transpose::operator()(boost::shared_ptr<PipelinePacket> inPacket, multi_nod
              boost::shared_ptr<TransposePacket> outPacket; 
              if(stageIndex==0){
                 inPacket_cast = boost::dynamic_pointer_cast<BufferPacket>(inPacket_pop);
-                outPacket = boost::make_shared<TransposePacket>(inPacket_pop->getTimestamp(),false,inPacket_pop->getFrequency(),xGpuBuffer,inPacket_cast);
+                outPacket = boost::make_shared<TransposePacket>(inPacket_pop->getTimestamp(),false,inPacket_pop->getFrequency(),xGpuBufferManager,inPacket_cast);
                 //std::cout<<inPacket_pop->getTimestamp()<<std::endl;
                 if(inPacket_cast->numPacketsReceived() != 64){
                     timeSincePacketsLastMissing = 0;

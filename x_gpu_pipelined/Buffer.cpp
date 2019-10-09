@@ -18,7 +18,7 @@ void Buffer::operator()(boost::shared_ptr<PipelinePacket> inPacket, multi_node::
 
     while(inPacketQueue->getArmortiserSize() > 0){
         boost::shared_ptr<PipelinePacket> inPacket_pop = inPacketQueue->removePacket();
-        boost::shared_ptr<Spead2RxPacket> inPacket_cast = boost::dynamic_pointer_cast<Spead2RxPacket>(inPacket_pop);
+        boost::shared_ptr<SpeadRxPacket> inPacket_cast = boost::dynamic_pointer_cast<SpeadRxPacket>(inPacket_pop);
         uint64_t packet_timestamp = inPacket_cast->getTimestamp();
         
         //std::cout << packet_timestamp << std::endl;
