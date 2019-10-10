@@ -3,6 +3,7 @@
 std::mutex accessLock;
 
 SpeadTx::SpeadTx(std::string txPort){
+    this->stageName = "SpeadTx";
     this->armortiserMaxSize = 1;
     tp = boost::make_shared<spead2::thread_pool>();
     resolver = boost::make_shared<boost::asio::ip::udp::resolver>(tp->get_io_service());

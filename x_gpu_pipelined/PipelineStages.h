@@ -6,6 +6,7 @@
 #include "global_definitions.h"
 #include "XGpuBufferManager.h"
 #include "PipelinePackets.h"
+#include <string>
 
 /**
  * \brief A base class to define a single stage in the pipeline.
@@ -27,6 +28,7 @@ class PipelineStage{
             
             while(inPacketQueue->getArmortiserSize() > 0){
                 boost::shared_ptr<PipelinePacket> inPacket_pop = inPacketQueue->removePacket();
+                this->packetsProcessed++;
                 OutputPacketQueuePtr outPacketQueue = processPacket(inPacket_pop);
                 for(boost::shared_ptr<PipelinePacket> outPacket: *outPacketQueue){
                     outPacketArmortiser->addPacket(boost::dynamic_pointer_cast<PipelinePacket>(outPacket));
@@ -45,11 +47,25 @@ class PipelineStage{
             outPacketArmortiser = boost::make_shared<PacketArmortiser>();
         }
 
+        int getPacketsProcessed(){
+            return packetsProcessed;
+        }
+
+        std::string getStageName(){
+            return stageName;
+        }
+
+        std::string toString(){
+            return stageName + " " + std::to_string(packetsProcessed);
+        }
+
     private:
         boost::shared_ptr<PacketArmortiser> outPacketArmortiser;
+        int packetsProcessed=0;
 
     protected:
         int armortiserMaxSize = ARMORTISER_SIZE;
+        std::string stageName = "";
 
 };
 

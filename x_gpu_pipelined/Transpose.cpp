@@ -5,6 +5,7 @@
 std::atomic<int> timeSincePacketsLastMissing; 
 
 Transpose::Transpose(boost::shared_ptr<XGpuBufferManager> xGpuBufferManager,int stageIndex):xGpuBufferManager(xGpuBufferManager),stageIndex(stageIndex){
+    this->stageName = "Transpose " + std::to_string(stageIndex);
     this->armortiserMaxSize = ARMORTISER_TO_GPU_SIZE;
     timeSincePacketsLastMissing=0;
     #if  BLOCK_SIZE > (NUM_ANTENNAS/NUM_TRANSPOSE_STAGES)

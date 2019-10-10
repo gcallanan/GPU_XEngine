@@ -35,6 +35,8 @@
   * \return an integer 0 upon exit success
   */
 
+typedef std::vector<boost::shared_ptr<multi_node> > NodePointersVector;
+
 int main(int argc, char** argv){
     //Set up command line arguments
     namespace po = boost::program_options;  
@@ -87,6 +89,7 @@ int main(int argc, char** argv){
 
     boost::shared_ptr<XGpuBufferManager> xGpuBuffer = boost::make_shared<XGpuBufferManager>();
     //Construct Graph Nodes
+
     multi_node bufferNode(g,1,Buffer());
     std::vector<boost::shared_ptr<multi_node> > transposeStagesList;
     for (size_t i = 0; i < NUM_TRANSPOSE_STAGES; i++)

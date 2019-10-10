@@ -5,6 +5,7 @@
 #include "Buffer.h"
 
 Buffer::Buffer(): first_timestamp(0){
+    this->stageName="Buffer";
     for (size_t i = 0; i < BUFFER_SIZE; i++)
     {
         buffer.push_front(nullptr);
