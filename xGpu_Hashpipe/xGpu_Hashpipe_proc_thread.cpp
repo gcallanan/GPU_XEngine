@@ -7,6 +7,7 @@
 #include "xGpu_Hashpipe_databuf.h"
 
 
+
 static int init(hashpipe_thread_args_t * args)
 {
         hashpipe_status_t st = args->st;
@@ -49,7 +50,8 @@ static void *run(hashpipe_thread_args_t * args)
             }
         }
 
-        int num = ++db_in->block[block_id_in].test;
+        int num = db_in->block[block_id_in].packet_ptr->getTimestamp();
+        boost::shared_ptr<PipelinePacket> temp_ptr = db_in->block[block_id_in].packet_ptr;
         std::cout << "Proc Stage:" << num << std::endl;
 
         demo2_input_databuf_set_free(db_in, block_id_in);
@@ -69,6 +71,7 @@ static void *run(hashpipe_thread_args_t * args)
         }
 
         db_out->block[block_id_out].test = num++;
+        db_out->block[block_id_out].packet_ptr = temp_ptr;
 
         //Indicate the free slot is now ready to be passed
         if(demo2_input_databuf_set_filled(db_out, block_id_out) != HASHPIPE_OK) {

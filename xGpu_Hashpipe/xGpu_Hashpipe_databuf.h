@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include "hashpipe.h"
 #include "hashpipe_databuf.h"
+#include "PipelinePackets.h"
+#include <boost/make_shared.hpp>
+#include <boost/shared_ptr.hpp>
 
 #define CACHE_ALIGNMENT         256
 #define N_INPUT_BLOCKS          100 
@@ -24,6 +27,7 @@ typedef struct demo2_input_block {
    demo2_input_block_header_t header;
    demo2_input_header_cache_alignment padding; // Maintain cache alignment
    uint64_t test;
+   boost::shared_ptr<PipelinePacket> packet_ptr;
 } demo2_input_block_t;
 
 typedef struct demo2_input_databuf {

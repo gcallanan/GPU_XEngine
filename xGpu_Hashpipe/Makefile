@@ -1,13 +1,14 @@
 CC          = g++
-HPDEMO_LIB_CCFLAGS     = -g -O3 -fPIC -shared -lstdc++ -mavx -msse4 -std=c++11\
-                     -I. -I$(CUDA_DIR)/include -I/usr/local/include \
+HPDEMO_LIB_CCFLAGS     = -g -O3 -fPIC -shared -lstdc++ -mavx -msse4 -std=c++11 \
+                     -I. -I$(CUDA_DIR)/include -I/usr/local/include  -I../xGpu_TBB \
                      -L. -L/usr/local/lib \
-                     -lhashpipe -lrt -lm
+                     -lhashpipe -lrt -lm -lboost_system -lspead2
 HPDEMO_LIB_TARGET   = xGpu_Hashpipe.so
 HPDEMO_LIB_SOURCES  = xGpu_Hashpipe_databuf.cpp \
                       xGpu_Hashpipe_input_thread.cpp \
 					  xGpu_Hashpipe_proc_thread.cpp \
-					  xGpu_Hashpipe_end_thread.cpp
+					  xGpu_Hashpipe_end_thread.cpp \
+					  ../xGpu_TBB/PipelinePackets.h
 HPDEMO_LIB_INCLUDES = xGpu_Hashpipe_databuf.h
 
 all: $(HPDEMO_LIB_TARGET)

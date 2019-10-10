@@ -50,7 +50,7 @@ static void *run(hashpipe_thread_args_t * args)
             }
         }
 
-        int num = ++db_in->block[block_id_in].test;
+        int num = db_in->block[block_id_in].packet_ptr->getTimestamp();
         std::cout << "End Stage:" << num << std::endl;
 
         demo2_input_databuf_set_free(db_in, block_id_in);

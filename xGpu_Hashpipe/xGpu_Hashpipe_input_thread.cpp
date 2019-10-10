@@ -50,7 +50,9 @@ static void *run(hashpipe_thread_args_t * args)
             }
         }
 
-        db_out->block[block_id_out].test = ++temp;
+        boost::shared_ptr<BufferPacket> temp_ptr = boost::make_shared<BufferPacket>(++temp,false,0);
+        db_out->block[block_id_out].test = temp;
+        db_out->block[block_id_out].packet_ptr = temp_ptr;
         std::cout << "Input Stage: " << temp << std::endl; 
 
         //Indicate the free slot is now ready to be passed
