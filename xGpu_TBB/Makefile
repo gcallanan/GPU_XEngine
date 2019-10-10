@@ -164,7 +164,7 @@ ifneq "$V" "1"
 	VERBOSE=@
 endif
 
-CUDA_CORRELATOR_OBJS  = x_gpu_pipelined.o SpeadRx.o Buffer.o Transpose.o global_definitions.o GPUWrapper.o SpeadTx.o
+CUDA_CORRELATOR_OBJS  = xGpu_TBB.o SpeadRx.o Buffer.o Transpose.o global_definitions.o GPUWrapper.o SpeadTx.o
 
 XGPUINFO_OBJS  = xgpuinfo.o
 
@@ -180,9 +180,9 @@ LIBXGPU_OBJS += $(CUBE_OBJS)
 # Each object file has a corresponding dependency file
 DEPS = $(BINXGPU_OBJS:.o=.d) $(LIBXGPU_OBJS:.o=.d)
 
-all: x_gpu_pipelined xgpuinfo $(LIBXGPU)
+all: xGpu_TBB xgpuinfo $(LIBXGPU)
 
-x_gpu_pipelined: $(CUDA_CORRELATOR_OBJS) $(LIBXGPU)
+xGpu_TBB: $(CUDA_CORRELATOR_OBJS) $(LIBXGPU)
 	$(NVCC) $(NVCCFLAGS) $(CUDA_CORRELATOR_OBJS) -o $@ $(LFLAGS) $(RPATH) -lxgpu -lrt
 
 xgpuinfo: $(XGPUINFO_OBJS) $(LIBXGPU)
