@@ -2,13 +2,20 @@ CC          = g++
 HPDEMO_LIB_CCFLAGS     = -g -O3 -fPIC -shared -lstdc++ -mavx -msse4 -std=c++11 \
                      -I. -I$(CUDA_DIR)/include -I/usr/local/include  -I../xGpu_TBB \
                      -L. -L/usr/local/lib \
-                     -lhashpipe -lrt -lm -lboost_system -lspead2
+                     -lhashpipe -lrt -lm -lboost_system -lspead2 -lpthread -lpcap -lrdmacm -libverbs -lboost_program_options
 HPDEMO_LIB_TARGET   = xGpu_Hashpipe.so
 HPDEMO_LIB_SOURCES  = xGpu_Hashpipe_databuf.cpp \
                       xGpu_Hashpipe_input_thread.cpp \
 					  xGpu_Hashpipe_proc_thread.cpp \
 					  xGpu_Hashpipe_end_thread.cpp \
-					  ../xGpu_TBB/PipelinePackets.h
+					  xGpu_Hashpipe_spead_rx_thread.cpp \
+					  buffer_thread.cpp\
+					  ../xGpu_TBB/PipelinePackets.h \
+					  ../xGpu_TBB/Buffer.h \
+					  ../xGpu_TBB/Buffer.cpp \
+					  ../xGpu_TBB/global_definitions.h \
+					  ../xGpu_TBB/global_definitions.cpp \
+
 HPDEMO_LIB_INCLUDES = xGpu_Hashpipe_databuf.h
 
 all: $(HPDEMO_LIB_TARGET)
@@ -31,3 +38,8 @@ install: install-lib
 
 .PHONY: all tags clean install install-lib
 # vi: set ts=8 noet :
+
+					  #SpeadRxHashpipe.cpp \
+					  #SpeadRxHashpipe.h \
+					  					  SpeadRxHashpipe.cpp \
+					  SpeadRxHashpipe.h

@@ -30,14 +30,14 @@ static void *run(hashpipe_thread_args_t * args)
     hashpipe_status_t st = args->st;
     int block_id_in = 0;
     int block_id_out = 0;
-    demo2_input_databuf_t *db_in = (demo2_input_databuf_t *)args->ibuf;
+    xGPU_Hashpipe_databuf_t *db_in = (xGPU_Hashpipe_databuf_t *)args->ibuf;
     static int temp = 0;
 
     while (run_threads()){
 
         //Get a free slot in the output queue
 
-        while ((rv=demo2_input_databuf_wait_filled(db_in, block_id_in)) != HASHPIPE_OK) {
+        while ((rv=xGPU_Hashpipe_databuf_wait_filled(db_in, block_id_in)) != HASHPIPE_OK) {
             if (rv==HASHPIPE_TIMEOUT) {
                 hashpipe_status_lock_safe(&st);
                 hputs(st.buf, status_key, "blocked");
@@ -53,7 +53,7 @@ static void *run(hashpipe_thread_args_t * args)
         int num = db_in->block[block_id_in].packet_ptr->getTimestamp();
         std::cout << "End Stage:" << num << std::endl;
 
-        demo2_input_databuf_set_free(db_in, block_id_in);
+        xGPU_Hashpipe_databuf_set_free(db_in, block_id_in);
 
     }
 }
@@ -63,7 +63,7 @@ static hashpipe_thread_desc_t x_GpuHashpipe_end_thread = {
     skey: "NETSTAT",
     init: init,
     run:  run,
-    ibuf_desc: {demo2_input_databuf_create},
+    ibuf_desc: {xGPU_Hashpipe_databuf_create},
     obuf_desc: {NULL}
 };
 

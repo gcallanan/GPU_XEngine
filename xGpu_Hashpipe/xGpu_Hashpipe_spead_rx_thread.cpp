@@ -5,22 +5,18 @@
 #include <iostream>
 #include <thread>
 #include "xGpu_Hashpipe_databuf.h"
+#include "SpeadRxHashpipe.h"
 
-int8 num;
+static boost::shared_ptr<SpeadRxHashpipe> rxHashpipePtr; 
 
 static int init(hashpipe_thread_args_t * args)
 {
         hashpipe_status_t st = args->st;
-        num = 0;
+        //SpeadRxHashpipe(args,12);
+        //rxHashpipePtr = boost::make_shared<SpeadRxHashpipe>(args,8000);
         //selecting a port to listen to
         std::cout << "Thread initialised" << std::endl;
-        hashpipe_status_lock_safe(&st);
-        hgeti8(st.buf, "NUM", &num);
-        hputi8(st.buf, "NPACKETS", 0);
-        hputi8(st.buf, "NBYTES", 0);
-        hashpipe_status_unlock_safe(&st);
         return 0;
-
 }
 
 static void *run(hashpipe_thread_args_t * args)
@@ -61,8 +57,8 @@ static void *run(hashpipe_thread_args_t * args)
     }
 }
 
-static hashpipe_thread_desc_t x_GpuHashpipe_input_thread = {
-    name: "xGpu_Hashpipe_input_thread",
+static hashpipe_thread_desc_t xGpu_Hashpipe_spead_rx_thread = {
+    name: "xGpu_Hashpipe_spead_rx_thread",
     skey: "NETSTAT",
     init: init,
     run:  run,
@@ -72,5 +68,5 @@ static hashpipe_thread_desc_t x_GpuHashpipe_input_thread = {
 
 static __attribute__((constructor)) void ctor()
 {
-  register_hashpipe_thread(&x_GpuHashpipe_input_thread);
+  register_hashpipe_thread(&xGpu_Hashpipe_spead_rx_thread);
 }
