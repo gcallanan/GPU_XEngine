@@ -139,20 +139,8 @@ int getBaselineOffset(int ant0, int ant1);
  */
 void displayBaseline(BaselineProducts_out* XGpuPacketOut, int i, int j);
 
-/**
- * \brief A base class for packets to be passed between stages in the pipline.
- * 
- * This base class does not containe any stage specific variables. All packets passed on the pipeline will have this class as their parent
- * 
- * \author Gareth Callanan
- */
-
-
-
 //Global Variables;
 extern PipelineCounts pipelineCounts;
-extern bool debug;
-extern int speadTxSuccessCount;
 
 
 #endif

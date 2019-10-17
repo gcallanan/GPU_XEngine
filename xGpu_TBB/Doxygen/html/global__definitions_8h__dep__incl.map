@@ -1,8 +1,0 @@
-<map id="global_definitions.h" name="global_definitions.h">
-<area shape="rect" id="node2" href="$_buffer_8h_source.html" title="Buffer.h" alt="" coords="5,80,73,107"/>
-<area shape="rect" id="node3" href="$x__gpu__pipelined_8cpp.html" title="This is the main file for the MeerKAT GPU X&#45;Engine program. It launches all the threads in the pipeli..." alt="" coords="193,155,333,181"/>
-<area shape="rect" id="node4" href="$_g_p_u_wrapper_8h_source.html" title="GPUWrapper.h" alt="" coords="149,80,260,107"/>
-<area shape="rect" id="node5" href="$_reorder_8h_source.html" title="Reorder.h" alt="" coords="284,80,363,107"/>
-<area shape="rect" id="node6" href="$_spead2_rx_8h_source.html" title="Spead2Rx.h" alt="" coords="387,80,481,107"/>
-<area shape="rect" id="node7" href="$_spead_tx_8h_source.html" title="SpeadTx.h" alt="" coords="506,80,591,107"/>
-</map>

@@ -1,9 +1,0 @@
-<map id="x_gpu_pipelined.cpp" name="x_gpu_pipelined.cpp">
-<area shape="rect" id="node11" href="$global__definitions_8h.html" title="File containing most user configurable parameters. " alt="" coords="1099,155,1233,181"/>
-<area shape="rect" id="node29" href="$_spead2_rx_8h_source.html" title="Spead2Rx.h" alt="" coords="597,80,692,107"/>
-<area shape="rect" id="node30" href="$_buffer_8h_source.html" title="Buffer.h" alt="" coords="981,80,1049,107"/>
-<area shape="rect" id="node32" href="$_reorder_8h_source.html" title="Reorder.h" alt="" coords="1583,80,1661,107"/>
-<area shape="rect" id="node33" href="$_g_p_u_wrapper_8h_source.html" title="GPUWrapper.h" alt="" coords="1685,80,1796,107"/>
-<area shape="rect" id="node34" href="$_spead_tx_8h_source.html" title="SpeadTx.h" alt="" coords="2154,80,2239,107"/>
-<area shape="rect" id="node26" href="$xgpu_8h_source.html" title="xgpu.h" alt="" coords="1843,237,1905,263"/>
-</map>

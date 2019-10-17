@@ -1,7 +1,6 @@
 #include "global_definitions.h"
 
 PipelineCounts pipelineCounts = {};
-bool debug = false;
 int speadTxSuccessCount = 0;
 
 int getBaselineOffset(int ant0, int ant1){
