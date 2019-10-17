@@ -14,11 +14,11 @@ static int init(hashpipe_thread_args_t * args)
         num = 0;
         //selecting a port to listen to
         std::cout << "Thread initialised" << std::endl;
-        hashpipe_status_lock_safe(&st);
-        hgeti8(st.buf, "NUM", &num);
-        hputi8(st.buf, "NPACKETS", 0);
-        hputi8(st.buf, "NBYTES", 0);
-        hashpipe_status_unlock_safe(&st);
+        // hashpipe_status_lock_safe(&st);
+        // hgeti8(st.buf, "NUM", &num);
+        // hputi8(st.buf, "NPACKETS", 0);
+        // hputi8(st.buf, "NBYTES", 0);
+        // hashpipe_status_unlock_safe(&st);
         return 0;
 
 }
@@ -38,9 +38,9 @@ static void *run(hashpipe_thread_args_t * args)
         while ((rv=xGPU_Hashpipe_databuf_wait_free(db_out, block_id_out)) 
                 != HASHPIPE_OK) {
             if (rv==HASHPIPE_TIMEOUT) {
-                    hashpipe_status_lock_safe(&st);
-                    hputs(st.buf, status_key, "blocked");
-                    hashpipe_status_unlock_safe(&st);
+                    //hashpipe_status_lock_safe(&st);
+                    //hputs(st.buf, status_key, "blocked");
+                    //hashpipe_status_unlock_safe(&st);
                 continue;
             } else {
                 hashpipe_error(__FUNCTION__, "error waiting for free databuf");
