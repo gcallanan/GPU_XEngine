@@ -1,0 +1,60 @@
+\hypertarget{struct_pipeline_counts_struct}{}\section{Pipeline\+Counts\+Struct Struct Reference}
+\label{struct_pipeline_counts_struct}\index{Pipeline\+Counts\+Struct@{Pipeline\+Counts\+Struct}}
+
+
+{\ttfamily \#include $<$global\+\_\+definitions.\+h$>$}
+
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::atomic$<$ int $>$ \hyperlink{struct_pipeline_counts_struct_a82ae1fa7ae44646e7d76f52f46d53d51}{Spead2\+Rx\+Stage}
+\item 
+std\+::atomic$<$ int $>$ \hyperlink{struct_pipeline_counts_struct_ac9f597d988bf273feee0a10fad2a7a71}{Buffer\+Stage}
+\item 
+std\+::atomic$<$ int $>$ \hyperlink{struct_pipeline_counts_struct_a4561cd0dd5f2be78e2ca3b775323bf98}{Reorder\+Stage} \mbox{[}\hyperlink{global__definitions_8h_a704a3e35bae9856130cd40f52f14469c}{N\+U\+M\+\_\+\+R\+E\+O\+R\+D\+E\+R\+\_\+\+S\+T\+A\+G\+ES}\mbox{]}
+\item 
+std\+::atomic$<$ int $>$ \hyperlink{struct_pipeline_counts_struct_a613300f0885bdeee4d0724651c7aaaf0}{G\+P\+U\+W\+Rapper\+Stage}
+\item 
+std\+::atomic$<$ int $>$ \hyperlink{struct_pipeline_counts_struct_abaa985e5f295aaa25939f872be316ef9}{Spead2\+Tx\+Stage}
+\item 
+std\+::atomic$<$ int $>$ \hyperlink{struct_pipeline_counts_struct_a444def89d06e08f615dacefbde2ec792}{heaps\+Dropped}
+\item 
+std\+::atomic$<$ int $>$ \hyperlink{struct_pipeline_counts_struct_ab566310da0d343755e2609dd87942297}{heaps\+Received}
+\item 
+std\+::atomic$<$ int $>$ \hyperlink{struct_pipeline_counts_struct_a20f49082e3e3a14a26a6d47e1118afe6}{packets\+Too\+Late}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Struct counters for different stages in the pipeline. This is used to monitor flow rates through the pipeline 
+
+\subsection{Member Data Documentation}
+\index{Pipeline\+Counts\+Struct@{Pipeline\+Counts\+Struct}!Buffer\+Stage@{Buffer\+Stage}}
+\index{Buffer\+Stage@{Buffer\+Stage}!Pipeline\+Counts\+Struct@{Pipeline\+Counts\+Struct}}
+\subsubsection[{\texorpdfstring{Buffer\+Stage}{BufferStage}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::atomic$<$int$>$ Pipeline\+Counts\+Struct\+::\+Buffer\+Stage}\hypertarget{struct_pipeline_counts_struct_ac9f597d988bf273feee0a10fad2a7a71}{}\label{struct_pipeline_counts_struct_ac9f597d988bf273feee0a10fad2a7a71}
+Number of packets processed by \hyperlink{class_buffer}{Buffer} pipeline stage. \index{Pipeline\+Counts\+Struct@{Pipeline\+Counts\+Struct}!G\+P\+U\+W\+Rapper\+Stage@{G\+P\+U\+W\+Rapper\+Stage}}
+\index{G\+P\+U\+W\+Rapper\+Stage@{G\+P\+U\+W\+Rapper\+Stage}!Pipeline\+Counts\+Struct@{Pipeline\+Counts\+Struct}}
+\subsubsection[{\texorpdfstring{G\+P\+U\+W\+Rapper\+Stage}{GPUWRapperStage}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::atomic$<$int$>$ Pipeline\+Counts\+Struct\+::\+G\+P\+U\+W\+Rapper\+Stage}\hypertarget{struct_pipeline_counts_struct_a613300f0885bdeee4d0724651c7aaaf0}{}\label{struct_pipeline_counts_struct_a613300f0885bdeee4d0724651c7aaaf0}
+Number of packets processed by the \hyperlink{class_g_p_u_wrapper}{G\+P\+U\+Wrapper} pipeline class. \index{Pipeline\+Counts\+Struct@{Pipeline\+Counts\+Struct}!heaps\+Dropped@{heaps\+Dropped}}
+\index{heaps\+Dropped@{heaps\+Dropped}!Pipeline\+Counts\+Struct@{Pipeline\+Counts\+Struct}}
+\subsubsection[{\texorpdfstring{heaps\+Dropped}{heapsDropped}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::atomic$<$int$>$ Pipeline\+Counts\+Struct\+::heaps\+Dropped}\hypertarget{struct_pipeline_counts_struct_a444def89d06e08f615dacefbde2ec792}{}\label{struct_pipeline_counts_struct_a444def89d06e08f615dacefbde2ec792}
+Number of heaps dropped due to not receiving all ethernet packets. \index{Pipeline\+Counts\+Struct@{Pipeline\+Counts\+Struct}!heaps\+Received@{heaps\+Received}}
+\index{heaps\+Received@{heaps\+Received}!Pipeline\+Counts\+Struct@{Pipeline\+Counts\+Struct}}
+\subsubsection[{\texorpdfstring{heaps\+Received}{heapsReceived}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::atomic$<$int$>$ Pipeline\+Counts\+Struct\+::heaps\+Received}\hypertarget{struct_pipeline_counts_struct_ab566310da0d343755e2609dd87942297}{}\label{struct_pipeline_counts_struct_ab566310da0d343755e2609dd87942297}
+Total number of heaps received.(Complete and dropped) \index{Pipeline\+Counts\+Struct@{Pipeline\+Counts\+Struct}!packets\+Too\+Late@{packets\+Too\+Late}}
+\index{packets\+Too\+Late@{packets\+Too\+Late}!Pipeline\+Counts\+Struct@{Pipeline\+Counts\+Struct}}
+\subsubsection[{\texorpdfstring{packets\+Too\+Late}{packetsTooLate}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::atomic$<$int$>$ Pipeline\+Counts\+Struct\+::packets\+Too\+Late}\hypertarget{struct_pipeline_counts_struct_a20f49082e3e3a14a26a6d47e1118afe6}{}\label{struct_pipeline_counts_struct_a20f49082e3e3a14a26a6d47e1118afe6}
+Packets received by \hyperlink{class_buffer}{Buffer} class that were dropped as the timestamp is too late to arrive \index{Pipeline\+Counts\+Struct@{Pipeline\+Counts\+Struct}!Reorder\+Stage@{Reorder\+Stage}}
+\index{Reorder\+Stage@{Reorder\+Stage}!Pipeline\+Counts\+Struct@{Pipeline\+Counts\+Struct}}
+\subsubsection[{\texorpdfstring{Reorder\+Stage}{ReorderStage}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::atomic$<$int$>$ Pipeline\+Counts\+Struct\+::\+Reorder\+Stage\mbox{[}{\bf N\+U\+M\+\_\+\+R\+E\+O\+R\+D\+E\+R\+\_\+\+S\+T\+A\+G\+ES}\mbox{]}}\hypertarget{struct_pipeline_counts_struct_a4561cd0dd5f2be78e2ca3b775323bf98}{}\label{struct_pipeline_counts_struct_a4561cd0dd5f2be78e2ca3b775323bf98}
+Number of packets processed by by the \hyperlink{class_reorder}{Reorder} pipeline class. \index{Pipeline\+Counts\+Struct@{Pipeline\+Counts\+Struct}!Spead2\+Rx\+Stage@{Spead2\+Rx\+Stage}}
+\index{Spead2\+Rx\+Stage@{Spead2\+Rx\+Stage}!Pipeline\+Counts\+Struct@{Pipeline\+Counts\+Struct}}
+\subsubsection[{\texorpdfstring{Spead2\+Rx\+Stage}{Spead2RxStage}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::atomic$<$int$>$ Pipeline\+Counts\+Struct\+::\+Spead2\+Rx\+Stage}\hypertarget{struct_pipeline_counts_struct_a82ae1fa7ae44646e7d76f52f46d53d51}{}\label{struct_pipeline_counts_struct_a82ae1fa7ae44646e7d76f52f46d53d51}
+Number of packets processed by \hyperlink{class_spead2_rx}{Spead2\+Rx} pipeline. \index{Pipeline\+Counts\+Struct@{Pipeline\+Counts\+Struct}!Spead2\+Tx\+Stage@{Spead2\+Tx\+Stage}}
+\index{Spead2\+Tx\+Stage@{Spead2\+Tx\+Stage}!Pipeline\+Counts\+Struct@{Pipeline\+Counts\+Struct}}
+\subsubsection[{\texorpdfstring{Spead2\+Tx\+Stage}{Spead2TxStage}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::atomic$<$int$>$ Pipeline\+Counts\+Struct\+::\+Spead2\+Tx\+Stage}\hypertarget{struct_pipeline_counts_struct_abaa985e5f295aaa25939f872be316ef9}{}\label{struct_pipeline_counts_struct_abaa985e5f295aaa25939f872be316ef9}
+Number of packets processed by \hyperlink{class_spead_tx}{Spead\+Tx} class. 
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+\hyperlink{global__definitions_8h}{global\+\_\+definitions.\+h}\end{DoxyCompactItemize}

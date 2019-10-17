@@ -1,0 +1,68 @@
+\hypertarget{x__gpu__pipelined_8cpp}{}\section{x\+\_\+gpu\+\_\+pipelined.\+cpp File Reference}
+\label{x__gpu__pipelined_8cpp}\index{x\+\_\+gpu\+\_\+pipelined.\+cpp@{x\+\_\+gpu\+\_\+pipelined.\+cpp}}
+
+
+This is the main file for the Meer\+K\+AT G\+PU X-\/\+Engine program. It launches all the threads in the pipeline.  
+
+
+{\ttfamily \#include $<$iostream$>$}\\*
+{\ttfamily \#include $<$stdio.\+h$>$}\\*
+{\ttfamily \#include $<$deque$>$}\\*
+{\ttfamily \#include \char`\"{}tbb/flow\+\_\+graph.\+h\char`\"{}}\\*
+{\ttfamily \#include $<$queue$>$}\\*
+{\ttfamily \#include $<$chrono$>$}\\*
+{\ttfamily \#include $<$iomanip$>$}\\*
+{\ttfamily \#include $<$boost/program\+\_\+options.\+hpp$>$}\\*
+{\ttfamily \#include $<$string$>$}\\*
+{\ttfamily \#include \char`\"{}global\+\_\+definitions.\+h\char`\"{}}\\*
+{\ttfamily \#include \char`\"{}Spead2\+Rx.\+h\char`\"{}}\\*
+{\ttfamily \#include \char`\"{}Buffer.\+h\char`\"{}}\\*
+{\ttfamily \#include \char`\"{}Reorder.\+h\char`\"{}}\\*
+{\ttfamily \#include \char`\"{}G\+P\+U\+Wrapper.\+h\char`\"{}}\\*
+{\ttfamily \#include \char`\"{}Spead\+Tx.\+h\char`\"{}}\\*
+{\ttfamily \#include $<$emmintrin.\+h$>$}\\*
+Include dependency graph for x\+\_\+gpu\+\_\+pipelined.\+cpp\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{x__gpu__pipelined_8cpp__incl}
+\end{center}
+\end{figure}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{x__gpu__pipelined_8cpp_a3c04138a5bfe5d72780bb7e82a18e627}{main} (int argc, char $\ast$$\ast$argv)
+\begin{DoxyCompactList}\small\item\em Main function, launches all threads in the pipeline, exits when all other threads close. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+This is the main file for the Meer\+K\+AT G\+PU X-\/\+Engine program. It launches all the threads in the pipeline. 
+
+\begin{DoxyAuthor}{Author}
+Gareth Callanan 
+\end{DoxyAuthor}
+
+
+\subsection{Function Documentation}
+\index{x\+\_\+gpu\+\_\+pipelined.\+cpp@{x\+\_\+gpu\+\_\+pipelined.\+cpp}!main@{main}}
+\index{main@{main}!x\+\_\+gpu\+\_\+pipelined.\+cpp@{x\+\_\+gpu\+\_\+pipelined.\+cpp}}
+\subsubsection[{\texorpdfstring{main(int argc, char $\ast$$\ast$argv)}{main(int argc, char **argv)}}]{\setlength{\rightskip}{0pt plus 5cm}int main (
+\begin{DoxyParamCaption}
+\item[{int}]{argc, }
+\item[{char $\ast$$\ast$}]{argv}
+\end{DoxyParamCaption}
+)}\hypertarget{x__gpu__pipelined_8cpp_a3c04138a5bfe5d72780bb7e82a18e627}{}\label{x__gpu__pipelined_8cpp_a3c04138a5bfe5d72780bb7e82a18e627}
+
+
+Main function, launches all threads in the pipeline, exits when all other threads close. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em argc} & An integer argument count of the command line arguments \\
+\hline
+\mbox{\tt in}  & {\em argv} & An argument vector of the command line arguments \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+an integer 0 upon exit success 
+\end{DoxyReturn}

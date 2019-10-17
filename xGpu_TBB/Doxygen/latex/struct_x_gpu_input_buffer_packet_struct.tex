@@ -1,0 +1,30 @@
+\hypertarget{struct_x_gpu_input_buffer_packet_struct}{}\section{X\+Gpu\+Input\+Buffer\+Packet\+Struct Struct Reference}
+\label{struct_x_gpu_input_buffer_packet_struct}\index{X\+Gpu\+Input\+Buffer\+Packet\+Struct@{X\+Gpu\+Input\+Buffer\+Packet\+Struct}}
+
+
+{\ttfamily \#include $<$global\+\_\+definitions.\+h$>$}
+
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+uint8\+\_\+t $\ast$ {\bfseries data\+\_\+ptr}\hypertarget{struct_x_gpu_input_buffer_packet_struct_acc88fc5021f4189b34a1802cfc22b534}{}\label{struct_x_gpu_input_buffer_packet_struct_acc88fc5021f4189b34a1802cfc22b534}
+
+\item 
+int {\bfseries offset}\hypertarget{struct_x_gpu_input_buffer_packet_struct_adf391b99ec6c244f93ec3e273e26b284}{}\label{struct_x_gpu_input_buffer_packet_struct_adf391b99ec6c244f93ec3e273e26b284}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Struct pointing to location in pinned host memory that will be transferred to the G\+PU. The \hyperlink{class_x_gpu_buffers}{X\+Gpu\+Buffers} class manages the allocation of this memory, the X\+Gpu\+Input\+Buffer\+Packet just stores the pointer and index of this in the buffer The samples are ordered from \mbox{[}time\mbox{]}\mbox{[}channel\mbox{]}\mbox{[}antenna\mbox{]}\mbox{[}polarization\mbox{]}\mbox{[}complexity\mbox{]}(ordered from slowest to fastest changing values) when not using D\+P4A instructions. 
+\begin{DoxyParams}{Parameters}
+{\em data\+\_\+ptr} & Pointer to location in pinned host memory buffer \\
+\hline
+{\em offset} & The position of this packet within the other packets in the buffer \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+\hyperlink{global__definitions_8h}{global\+\_\+definitions.\+h}\end{DoxyCompactItemize}

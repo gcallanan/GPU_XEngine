@@ -1,0 +1,277 @@
+\hypertarget{global__definitions_8h}{}\section{global\+\_\+definitions.\+h File Reference}
+\label{global__definitions_8h}\index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+
+
+File containing most user configurable parameters.  
+
+
+{\ttfamily \#include $<$cstdint$>$}\\*
+{\ttfamily \#include \char`\"{}tbb/flow\+\_\+graph.\+h\char`\"{}}\\*
+{\ttfamily \#include $<$boost/asio.\+hpp$>$}\\*
+{\ttfamily \#include $<$spead2/common\+\_\+thread\+\_\+pool.\+h$>$}\\*
+{\ttfamily \#include $<$spead2/recv\+\_\+udp.\+h$>$}\\*
+{\ttfamily \#include $<$spead2/recv\+\_\+udp\+\_\+pcap.\+h$>$}\\*
+{\ttfamily \#include $<$spead2/recv\+\_\+heap.\+h$>$}\\*
+{\ttfamily \#include $<$spead2/recv\+\_\+live\+\_\+heap.\+h$>$}\\*
+{\ttfamily \#include $<$spead2/recv\+\_\+ring\+\_\+stream.\+h$>$}\\*
+{\ttfamily \#include $<$spead2/recv\+\_\+stream.\+h$>$}\\*
+{\ttfamily \#include $<$bitset$>$}\\*
+{\ttfamily \#include $<$map$>$}\\*
+{\ttfamily \#include $<$mutex$>$}\\*
+{\ttfamily \#include $<$boost/shared\+\_\+ptr.\+hpp$>$}\\*
+{\ttfamily \#include $<$boost/make\+\_\+shared.\+hpp$>$}\\*
+{\ttfamily \#include \char`\"{}xgpu.\+h\char`\"{}}\\*
+{\ttfamily \#include $<$atomic$>$}\\*
+Include dependency graph for global\+\_\+definitions.\+h\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{global__definitions_8h__incl}
+\end{center}
+\end{figure}
+This graph shows which files directly or indirectly include this file\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{global__definitions_8h__dep__incl}
+\end{center}
+\end{figure}
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{struct_pipeline_counts_struct}{Pipeline\+Counts\+Struct}
+\item 
+struct \hyperlink{struct_dual_poll_complex_struct__in}{Dual\+Poll\+Complex\+Struct\+\_\+in}
+\item 
+struct \hyperlink{struct_baseline_products_struct__out}{Baseline\+Products\+Struct\+\_\+out}
+\item 
+struct \hyperlink{struct_x_gpu_input_buffer_packet_struct}{X\+Gpu\+Input\+Buffer\+Packet\+Struct}
+\item 
+struct \hyperlink{struct_x_gpu_output_buffer_packet_struct}{X\+Gpu\+Output\+Buffer\+Packet\+Struct}
+\item 
+class \hyperlink{class_x_gpu_buffers}{X\+Gpu\+Buffers}
+\begin{DoxyCompactList}\small\item\em A class for managing x\+G\+PU initialisation and memory assignment. \end{DoxyCompactList}\item 
+class \hyperlink{class_stream_object}{Stream\+Object}
+\begin{DoxyCompactList}\small\item\em A base class for packets to be passed between stages in the pipline. \end{DoxyCompactList}\item 
+class \hyperlink{class_spead2_rx_packet}{Spead2\+Rx\+Packet}
+\begin{DoxyCompactList}\small\item\em Packet that is transmitted by the \hyperlink{class_spead2_rx}{Spead2\+Rx} class. \end{DoxyCompactList}\item 
+class \hyperlink{class_buffer_packet}{Buffer\+Packet}
+\item 
+class \hyperlink{class_spead2_rx_packet_wrapper}{Spead2\+Rx\+Packet\+Wrapper}
+\item 
+class \hyperlink{class_reorder_packet}{Reorder\+Packet}
+\item 
+class \hyperlink{class_g_p_u_wrapper_packet}{G\+P\+U\+Wrapper\+Packet}
+\item 
+struct \hyperlink{struct_stream_object_pointer_compare}{Stream\+Object\+Pointer\+Compare}
+\end{DoxyCompactItemize}
+\subsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{global__definitions_8h_ad88786c933fadb1eec87bc037816a95c}{N\+U\+M\+\_\+\+A\+N\+T\+E\+N\+N\+AS}~64
+\item 
+\#define \hyperlink{global__definitions_8h_ab03f828117aaf4bb571972466369c42a}{N\+U\+M\+\_\+\+C\+H\+A\+N\+N\+E\+L\+S\+\_\+\+P\+E\+R\+\_\+\+X\+E\+N\+G\+I\+NE}~16
+\item 
+\#define \hyperlink{global__definitions_8h_a8d6a287942d41da4e609bd81f411c02d}{N\+U\+M\+\_\+\+P\+O\+L\+LS}~2
+\item 
+\#define \hyperlink{global__definitions_8h_a47fde7124d36ed243861ce7e7a30bf7f}{N\+U\+M\+\_\+\+T\+I\+M\+E\+\_\+\+S\+A\+M\+P\+L\+ES}~256
+\item 
+\#define {\bfseries F\+F\+T\+\_\+\+S\+I\+ZE}~(\hyperlink{global__definitions_8h_ab03f828117aaf4bb571972466369c42a}{N\+U\+M\+\_\+\+C\+H\+A\+N\+N\+E\+L\+S\+\_\+\+P\+E\+R\+\_\+\+X\+E\+N\+G\+I\+NE}$\ast$4$\ast$\hyperlink{global__definitions_8h_ad88786c933fadb1eec87bc037816a95c}{N\+U\+M\+\_\+\+A\+N\+T\+E\+N\+N\+AS})\hypertarget{global__definitions_8h_a636ddc19af00bc87969a07c88331f105}{}\label{global__definitions_8h_a636ddc19af00bc87969a07c88331f105}
+
+\item 
+\#define \hyperlink{global__definitions_8h_ae354586da8298293d46c387b1cb453ca}{Q\+U\+A\+D\+R\+A\+N\+T\+\_\+\+S\+I\+ZE}~((\hyperlink{global__definitions_8h_ad88786c933fadb1eec87bc037816a95c}{N\+U\+M\+\_\+\+A\+N\+T\+E\+N\+N\+AS}/2+1)$\ast$(\hyperlink{global__definitions_8h_ad88786c933fadb1eec87bc037816a95c}{N\+U\+M\+\_\+\+A\+N\+T\+E\+N\+N\+AS}/4))
+\item 
+\#define \hyperlink{global__definitions_8h_a6f9c8d9cd803d794ff3b5e96b83544b1}{N\+U\+M\+\_\+\+B\+A\+S\+E\+L\+I\+N\+ES}~(\hyperlink{global__definitions_8h_ae354586da8298293d46c387b1cb453ca}{Q\+U\+A\+D\+R\+A\+N\+T\+\_\+\+S\+I\+ZE}$\ast$4)
+\item 
+\#define \hyperlink{global__definitions_8h_a6b20d41d6252e9871430c242cb1a56e7}{B\+U\+F\+F\+E\+R\+\_\+\+S\+I\+ZE}~20
+\item 
+\#define \hyperlink{global__definitions_8h_a734854fd0fb53a3edbfa4712b8ea77d8}{R\+E\+S\+Y\+N\+C\+\_\+\+L\+I\+M\+IT}~200
+\item 
+\#define \hyperlink{global__definitions_8h_a76636fa3796dc7daf49e4bf6e1800c4c}{T\+I\+M\+E\+S\+T\+A\+M\+P\+\_\+\+J\+U\+MP}~(\hyperlink{global__definitions_8h_a47fde7124d36ed243861ce7e7a30bf7f}{N\+U\+M\+\_\+\+T\+I\+M\+E\+\_\+\+S\+A\+M\+P\+L\+ES}$\ast$2$\ast$F\+F\+T\+\_\+\+S\+I\+ZE)
+\item 
+\#define \hyperlink{global__definitions_8h_a963acd9cf2e9eb8cbe63327716bf2321}{D\+E\+F\+A\+U\+L\+T\+\_\+\+A\+C\+C\+U\+M\+U\+L\+A\+T\+I\+O\+N\+S\+\_\+\+T\+H\+R\+E\+S\+H\+O\+LD}~((int)(1632$\ast$1.\+5))
+\item 
+\#define \hyperlink{global__definitions_8h_a88e8629b4c165aa4e56d2acc72a5d5ea}{A\+R\+M\+O\+R\+T\+I\+S\+E\+R\+\_\+\+S\+I\+ZE}~100
+\item 
+\#define \hyperlink{global__definitions_8h_ad4ae44fe05841c8ac3591ea7aa5a43bc}{A\+R\+M\+O\+R\+T\+I\+S\+E\+R\+\_\+\+T\+O\+\_\+\+G\+P\+U\+\_\+\+S\+I\+ZE}~10
+\item 
+\#define \hyperlink{global__definitions_8h_a704a3e35bae9856130cd40f52f14469c}{N\+U\+M\+\_\+\+R\+E\+O\+R\+D\+E\+R\+\_\+\+S\+T\+A\+G\+ES}~2
+\item 
+\#define \hyperlink{global__definitions_8h_ad51ded0bbd705f02f73fc60c0b721ced}{B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE}~8
+\item 
+\#define \hyperlink{global__definitions_8h_a19eb0efaa8a1d77712b26ec708e4fd56}{U\+S\+E\+\_\+\+S\+SE}~1
+\item 
+\#define \hyperlink{global__definitions_8h_a766d9b0b010729344b423964fbe6b0eb}{D\+E\+F\+A\+U\+L\+T\+\_\+\+X\+G\+P\+U\+\_\+\+O\+U\+T\+P\+U\+T\+\_\+\+B\+U\+F\+F\+E\+R\+S\+\_\+\+T\+H\+R\+E\+S\+H\+O\+LD}~4
+\end{DoxyCompactItemize}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef struct \hyperlink{struct_pipeline_counts_struct}{Pipeline\+Counts\+Struct} \hyperlink{global__definitions_8h_af8026c7301755dfceba7e6cda5830e46}{Pipeline\+Counts}
+\item 
+typedef struct \hyperlink{struct_dual_poll_complex_struct__in}{Dual\+Poll\+Complex\+Struct\+\_\+in} \hyperlink{global__definitions_8h_a15a16a561045b7779c1db048066fc364}{Dual\+Poll\+Complex\+\_\+in}
+\item 
+typedef struct \hyperlink{struct_baseline_products_struct__out}{Baseline\+Products\+Struct\+\_\+out} \hyperlink{global__definitions_8h_ad10ea968fb8f53bcca11b6cc0758ff0b}{Baseline\+Products\+\_\+out}
+\item 
+typedef struct \hyperlink{struct_x_gpu_input_buffer_packet_struct}{X\+Gpu\+Input\+Buffer\+Packet\+Struct} \hyperlink{global__definitions_8h_aca3be2a33f2e7a79e14ba4a3d6f77268}{X\+Gpu\+Input\+Buffer\+Packet}
+\item 
+typedef struct \hyperlink{struct_x_gpu_output_buffer_packet_struct}{X\+Gpu\+Output\+Buffer\+Packet\+Struct} \hyperlink{global__definitions_8h_a7919954aecf9a2c4521f0af7c1109498}{X\+Gpu\+Output\+Buffer\+Packet}
+\item 
+typedef tbb\+::flow\+::multifunction\+\_\+node$<$ boost\+::shared\+\_\+ptr$<$ \hyperlink{class_stream_object}{Stream\+Object} $>$, tbb\+::flow\+::tuple$<$ boost\+::shared\+\_\+ptr$<$ \hyperlink{class_stream_object}{Stream\+Object} $>$ $>$ $>$ {\bfseries multi\+\_\+node}\hypertarget{global__definitions_8h_ae8e3e28c67fe4f0e936afa18b61683fa}{}\label{global__definitions_8h_ae8e3e28c67fe4f0e936afa18b61683fa}
+
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+int \hyperlink{global__definitions_8h_a715d2499260b59d9c8d45517fd543d15}{get\+Baseline\+Offset} (int ant0, int ant1)
+\begin{DoxyCompactList}\small\item\em Function to get the index of a single baseline in a packet of baselines output from x\+G\+PU. This offset is not in bytes, but in baselines. It needs to be multiplied by size of a baseline to search through bytes. It is required that ant0$>$ant1 or else an error is thrown. \end{DoxyCompactList}\item 
+void \hyperlink{global__definitions_8h_a73aa3958c89ff5dd44c96d2994acad40}{display\+Baseline} (\hyperlink{global__definitions_8h_ad10ea968fb8f53bcca11b6cc0758ff0b}{Baseline\+Products\+\_\+out} $\ast$X\+Gpu\+Packet\+Out, int i, int j)
+\begin{DoxyCompactList}\small\item\em Function to print out an individual baseline. It is required that i$>$j or else an error is thrown. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{global__definitions_8h_af8026c7301755dfceba7e6cda5830e46}{Pipeline\+Counts} {\bfseries pipeline\+Counts}\hypertarget{global__definitions_8h_aee44b0a3d520287f7d6f1c77363c2dd2}{}\label{global__definitions_8h_aee44b0a3d520287f7d6f1c77363c2dd2}
+
+\item 
+bool {\bfseries debug}\hypertarget{global__definitions_8h_a398527b3e9e358c345c5047b16871957}{}\label{global__definitions_8h_a398527b3e9e358c345c5047b16871957}
+
+\item 
+int {\bfseries spead\+Tx\+Success\+Count}\hypertarget{global__definitions_8h_a243bd1199fb28e7c5de4c0106a0e3c96}{}\label{global__definitions_8h_a243bd1199fb28e7c5de4c0106a0e3c96}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+File containing most user configurable parameters. 
+
+\begin{DoxyAuthor}{Author}
+Gareth Callanan
+\end{DoxyAuthor}
+This file contains most of the macros that the user will need to change for their own needs. It also contains the pipeline packet classes that are used to pass data between pipeline stages. The 
+
+\subsection{Macro Definition Documentation}
+\index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!A\+R\+M\+O\+R\+T\+I\+S\+E\+R\+\_\+\+S\+I\+ZE@{A\+R\+M\+O\+R\+T\+I\+S\+E\+R\+\_\+\+S\+I\+ZE}}
+\index{A\+R\+M\+O\+R\+T\+I\+S\+E\+R\+\_\+\+S\+I\+ZE@{A\+R\+M\+O\+R\+T\+I\+S\+E\+R\+\_\+\+S\+I\+ZE}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{A\+R\+M\+O\+R\+T\+I\+S\+E\+R\+\_\+\+S\+I\+ZE}{ARMORTISER_SIZE}}]{\setlength{\rightskip}{0pt plus 5cm}\#define A\+R\+M\+O\+R\+T\+I\+S\+E\+R\+\_\+\+S\+I\+ZE~100}\hypertarget{global__definitions_8h_a88e8629b4c165aa4e56d2acc72a5d5ea}{}\label{global__definitions_8h_a88e8629b4c165aa4e56d2acc72a5d5ea}
+Before packets are handed over to the next stage of the pipeline they are grouped into a larger packet to reduce thread overhead. A\+R\+M\+O\+R\+T\+I\+S\+E\+R\+\_\+\+S\+I\+ZE specifies the number of packets to group \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!A\+R\+M\+O\+R\+T\+I\+S\+E\+R\+\_\+\+T\+O\+\_\+\+G\+P\+U\+\_\+\+S\+I\+ZE@{A\+R\+M\+O\+R\+T\+I\+S\+E\+R\+\_\+\+T\+O\+\_\+\+G\+P\+U\+\_\+\+S\+I\+ZE}}
+\index{A\+R\+M\+O\+R\+T\+I\+S\+E\+R\+\_\+\+T\+O\+\_\+\+G\+P\+U\+\_\+\+S\+I\+ZE@{A\+R\+M\+O\+R\+T\+I\+S\+E\+R\+\_\+\+T\+O\+\_\+\+G\+P\+U\+\_\+\+S\+I\+ZE}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{A\+R\+M\+O\+R\+T\+I\+S\+E\+R\+\_\+\+T\+O\+\_\+\+G\+P\+U\+\_\+\+S\+I\+ZE}{ARMORTISER_TO_GPU_SIZE}}]{\setlength{\rightskip}{0pt plus 5cm}\#define A\+R\+M\+O\+R\+T\+I\+S\+E\+R\+\_\+\+T\+O\+\_\+\+G\+P\+U\+\_\+\+S\+I\+ZE~10}\hypertarget{global__definitions_8h_ad4ae44fe05841c8ac3591ea7aa5a43bc}{}\label{global__definitions_8h_ad4ae44fe05841c8ac3591ea7aa5a43bc}
+Same function as A\+R\+M\+O\+R\+T\+I\+S\+E\+R\+\_\+\+S\+I\+ZE but specifically implemented for the transmission from the \hyperlink{class_reorder}{Reorder} to the \hyperlink{class_g_p_u_wrapper}{G\+P\+U\+Wrapper} class. This class needs to have a smaller A\+R\+M\+O\+R\+T\+I\+S\+E\+R\+\_\+\+S\+I\+ZE as the packets q ueued here are holding G\+PU memory which we want to use efficiently \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE@{B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE}}
+\index{B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE@{B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE}{BLOCK_SIZE}}]{\setlength{\rightskip}{0pt plus 5cm}\#define B\+L\+O\+C\+K\+\_\+\+S\+I\+ZE~8}\hypertarget{global__definitions_8h_ad51ded0bbd705f02f73fc60c0b721ced}{}\label{global__definitions_8h_ad51ded0bbd705f02f73fc60c0b721ced}
+Block size to perform the transpose, must be a power of two. \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!B\+U\+F\+F\+E\+R\+\_\+\+S\+I\+ZE@{B\+U\+F\+F\+E\+R\+\_\+\+S\+I\+ZE}}
+\index{B\+U\+F\+F\+E\+R\+\_\+\+S\+I\+ZE@{B\+U\+F\+F\+E\+R\+\_\+\+S\+I\+ZE}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{B\+U\+F\+F\+E\+R\+\_\+\+S\+I\+ZE}{BUFFER_SIZE}}]{\setlength{\rightskip}{0pt plus 5cm}\#define B\+U\+F\+F\+E\+R\+\_\+\+S\+I\+ZE~20}\hypertarget{global__definitions_8h_a6b20d41d6252e9871430c242cb1a56e7}{}\label{global__definitions_8h_a6b20d41d6252e9871430c242cb1a56e7}
+Number of consecutive timestamps the \hyperlink{class_buffer}{Buffer} class will have room to buffer \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!D\+E\+F\+A\+U\+L\+T\+\_\+\+A\+C\+C\+U\+M\+U\+L\+A\+T\+I\+O\+N\+S\+\_\+\+T\+H\+R\+E\+S\+H\+O\+LD@{D\+E\+F\+A\+U\+L\+T\+\_\+\+A\+C\+C\+U\+M\+U\+L\+A\+T\+I\+O\+N\+S\+\_\+\+T\+H\+R\+E\+S\+H\+O\+LD}}
+\index{D\+E\+F\+A\+U\+L\+T\+\_\+\+A\+C\+C\+U\+M\+U\+L\+A\+T\+I\+O\+N\+S\+\_\+\+T\+H\+R\+E\+S\+H\+O\+LD@{D\+E\+F\+A\+U\+L\+T\+\_\+\+A\+C\+C\+U\+M\+U\+L\+A\+T\+I\+O\+N\+S\+\_\+\+T\+H\+R\+E\+S\+H\+O\+LD}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{D\+E\+F\+A\+U\+L\+T\+\_\+\+A\+C\+C\+U\+M\+U\+L\+A\+T\+I\+O\+N\+S\+\_\+\+T\+H\+R\+E\+S\+H\+O\+LD}{DEFAULT_ACCUMULATIONS_THRESHOLD}}]{\setlength{\rightskip}{0pt plus 5cm}\#define D\+E\+F\+A\+U\+L\+T\+\_\+\+A\+C\+C\+U\+M\+U\+L\+A\+T\+I\+O\+N\+S\+\_\+\+T\+H\+R\+E\+S\+H\+O\+LD~((int)(1632$\ast$1.\+5))}\hypertarget{global__definitions_8h_a963acd9cf2e9eb8cbe63327716bf2321}{}\label{global__definitions_8h_a963acd9cf2e9eb8cbe63327716bf2321}
+Maximum number of accumulations \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!D\+E\+F\+A\+U\+L\+T\+\_\+\+X\+G\+P\+U\+\_\+\+O\+U\+T\+P\+U\+T\+\_\+\+B\+U\+F\+F\+E\+R\+S\+\_\+\+T\+H\+R\+E\+S\+H\+O\+LD@{D\+E\+F\+A\+U\+L\+T\+\_\+\+X\+G\+P\+U\+\_\+\+O\+U\+T\+P\+U\+T\+\_\+\+B\+U\+F\+F\+E\+R\+S\+\_\+\+T\+H\+R\+E\+S\+H\+O\+LD}}
+\index{D\+E\+F\+A\+U\+L\+T\+\_\+\+X\+G\+P\+U\+\_\+\+O\+U\+T\+P\+U\+T\+\_\+\+B\+U\+F\+F\+E\+R\+S\+\_\+\+T\+H\+R\+E\+S\+H\+O\+LD@{D\+E\+F\+A\+U\+L\+T\+\_\+\+X\+G\+P\+U\+\_\+\+O\+U\+T\+P\+U\+T\+\_\+\+B\+U\+F\+F\+E\+R\+S\+\_\+\+T\+H\+R\+E\+S\+H\+O\+LD}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{D\+E\+F\+A\+U\+L\+T\+\_\+\+X\+G\+P\+U\+\_\+\+O\+U\+T\+P\+U\+T\+\_\+\+B\+U\+F\+F\+E\+R\+S\+\_\+\+T\+H\+R\+E\+S\+H\+O\+LD}{DEFAULT_XGPU_OUTPUT_BUFFERS_THRESHOLD}}]{\setlength{\rightskip}{0pt plus 5cm}\#define D\+E\+F\+A\+U\+L\+T\+\_\+\+X\+G\+P\+U\+\_\+\+O\+U\+T\+P\+U\+T\+\_\+\+B\+U\+F\+F\+E\+R\+S\+\_\+\+T\+H\+R\+E\+S\+H\+O\+LD~4}\hypertarget{global__definitions_8h_a766d9b0b010729344b423964fbe6b0eb}{}\label{global__definitions_8h_a766d9b0b010729344b423964fbe6b0eb}
+Number of output x\+G\+PU packets to allocate space for. This needs to be greater than 1 so that another output packet can be allocated while another is being processed. However this does not need to be too large as a new packet gets created in the order of seconds. \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!N\+U\+M\+\_\+\+A\+N\+T\+E\+N\+N\+AS@{N\+U\+M\+\_\+\+A\+N\+T\+E\+N\+N\+AS}}
+\index{N\+U\+M\+\_\+\+A\+N\+T\+E\+N\+N\+AS@{N\+U\+M\+\_\+\+A\+N\+T\+E\+N\+N\+AS}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{N\+U\+M\+\_\+\+A\+N\+T\+E\+N\+N\+AS}{NUM_ANTENNAS}}]{\setlength{\rightskip}{0pt plus 5cm}\#define N\+U\+M\+\_\+\+A\+N\+T\+E\+N\+N\+AS~64}\hypertarget{global__definitions_8h_ad88786c933fadb1eec87bc037816a95c}{}\label{global__definitions_8h_ad88786c933fadb1eec87bc037816a95c}
+Number of antennas in the array. \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!N\+U\+M\+\_\+\+B\+A\+S\+E\+L\+I\+N\+ES@{N\+U\+M\+\_\+\+B\+A\+S\+E\+L\+I\+N\+ES}}
+\index{N\+U\+M\+\_\+\+B\+A\+S\+E\+L\+I\+N\+ES@{N\+U\+M\+\_\+\+B\+A\+S\+E\+L\+I\+N\+ES}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{N\+U\+M\+\_\+\+B\+A\+S\+E\+L\+I\+N\+ES}{NUM_BASELINES}}]{\setlength{\rightskip}{0pt plus 5cm}\#define N\+U\+M\+\_\+\+B\+A\+S\+E\+L\+I\+N\+ES~({\bf Q\+U\+A\+D\+R\+A\+N\+T\+\_\+\+S\+I\+ZE}$\ast$4)}\hypertarget{global__definitions_8h_a6f9c8d9cd803d794ff3b5e96b83544b1}{}\label{global__definitions_8h_a6f9c8d9cd803d794ff3b5e96b83544b1}
+Number of baselines being output \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!N\+U\+M\+\_\+\+C\+H\+A\+N\+N\+E\+L\+S\+\_\+\+P\+E\+R\+\_\+\+X\+E\+N\+G\+I\+NE@{N\+U\+M\+\_\+\+C\+H\+A\+N\+N\+E\+L\+S\+\_\+\+P\+E\+R\+\_\+\+X\+E\+N\+G\+I\+NE}}
+\index{N\+U\+M\+\_\+\+C\+H\+A\+N\+N\+E\+L\+S\+\_\+\+P\+E\+R\+\_\+\+X\+E\+N\+G\+I\+NE@{N\+U\+M\+\_\+\+C\+H\+A\+N\+N\+E\+L\+S\+\_\+\+P\+E\+R\+\_\+\+X\+E\+N\+G\+I\+NE}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{N\+U\+M\+\_\+\+C\+H\+A\+N\+N\+E\+L\+S\+\_\+\+P\+E\+R\+\_\+\+X\+E\+N\+G\+I\+NE}{NUM_CHANNELS_PER_XENGINE}}]{\setlength{\rightskip}{0pt plus 5cm}\#define N\+U\+M\+\_\+\+C\+H\+A\+N\+N\+E\+L\+S\+\_\+\+P\+E\+R\+\_\+\+X\+E\+N\+G\+I\+NE~16}\hypertarget{global__definitions_8h_ab03f828117aaf4bb571972466369c42a}{}\label{global__definitions_8h_ab03f828117aaf4bb571972466369c42a}
+Number of channels to be processed per X-\/\+Engine. Also the number of channels per S\+P\+E\+AD heap \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!N\+U\+M\+\_\+\+P\+O\+L\+LS@{N\+U\+M\+\_\+\+P\+O\+L\+LS}}
+\index{N\+U\+M\+\_\+\+P\+O\+L\+LS@{N\+U\+M\+\_\+\+P\+O\+L\+LS}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{N\+U\+M\+\_\+\+P\+O\+L\+LS}{NUM_POLLS}}]{\setlength{\rightskip}{0pt plus 5cm}\#define N\+U\+M\+\_\+\+P\+O\+L\+LS~2}\hypertarget{global__definitions_8h_a8d6a287942d41da4e609bd81f411c02d}{}\label{global__definitions_8h_a8d6a287942d41da4e609bd81f411c02d}
+Size of the F\+FT performed by the F-\/\+Engines. Number of polarisations per channel to be processed per X-\/\+Engine \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!N\+U\+M\+\_\+\+R\+E\+O\+R\+D\+E\+R\+\_\+\+S\+T\+A\+G\+ES@{N\+U\+M\+\_\+\+R\+E\+O\+R\+D\+E\+R\+\_\+\+S\+T\+A\+G\+ES}}
+\index{N\+U\+M\+\_\+\+R\+E\+O\+R\+D\+E\+R\+\_\+\+S\+T\+A\+G\+ES@{N\+U\+M\+\_\+\+R\+E\+O\+R\+D\+E\+R\+\_\+\+S\+T\+A\+G\+ES}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{N\+U\+M\+\_\+\+R\+E\+O\+R\+D\+E\+R\+\_\+\+S\+T\+A\+G\+ES}{NUM_REORDER_STAGES}}]{\setlength{\rightskip}{0pt plus 5cm}\#define N\+U\+M\+\_\+\+R\+E\+O\+R\+D\+E\+R\+\_\+\+S\+T\+A\+G\+ES~2}\hypertarget{global__definitions_8h_a704a3e35bae9856130cd40f52f14469c}{}\label{global__definitions_8h_a704a3e35bae9856130cd40f52f14469c}
+Number of stages for the reoder pipeline module. Each stage is processed by a different thread \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!N\+U\+M\+\_\+\+T\+I\+M\+E\+\_\+\+S\+A\+M\+P\+L\+ES@{N\+U\+M\+\_\+\+T\+I\+M\+E\+\_\+\+S\+A\+M\+P\+L\+ES}}
+\index{N\+U\+M\+\_\+\+T\+I\+M\+E\+\_\+\+S\+A\+M\+P\+L\+ES@{N\+U\+M\+\_\+\+T\+I\+M\+E\+\_\+\+S\+A\+M\+P\+L\+ES}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{N\+U\+M\+\_\+\+T\+I\+M\+E\+\_\+\+S\+A\+M\+P\+L\+ES}{NUM_TIME_SAMPLES}}]{\setlength{\rightskip}{0pt plus 5cm}\#define N\+U\+M\+\_\+\+T\+I\+M\+E\+\_\+\+S\+A\+M\+P\+L\+ES~256}\hypertarget{global__definitions_8h_a47fde7124d36ed243861ce7e7a30bf7f}{}\label{global__definitions_8h_a47fde7124d36ed243861ce7e7a30bf7f}
+Number of time samples per S\+P\+E\+AD heap \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!Q\+U\+A\+D\+R\+A\+N\+T\+\_\+\+S\+I\+ZE@{Q\+U\+A\+D\+R\+A\+N\+T\+\_\+\+S\+I\+ZE}}
+\index{Q\+U\+A\+D\+R\+A\+N\+T\+\_\+\+S\+I\+ZE@{Q\+U\+A\+D\+R\+A\+N\+T\+\_\+\+S\+I\+ZE}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{Q\+U\+A\+D\+R\+A\+N\+T\+\_\+\+S\+I\+ZE}{QUADRANT_SIZE}}]{\setlength{\rightskip}{0pt plus 5cm}\#define Q\+U\+A\+D\+R\+A\+N\+T\+\_\+\+S\+I\+ZE~(({\bf N\+U\+M\+\_\+\+A\+N\+T\+E\+N\+N\+AS}/2+1)$\ast$({\bf N\+U\+M\+\_\+\+A\+N\+T\+E\+N\+N\+AS}/4))}\hypertarget{global__definitions_8h_ae354586da8298293d46c387b1cb453ca}{}\label{global__definitions_8h_ae354586da8298293d46c387b1cb453ca}
+Size of a quadrant -\/ This is used for displaying the baseline as the ordering does not follow a simple pattern. See \hyperlink{global__definitions_8h_a73aa3958c89ff5dd44c96d2994acad40}{display\+Baseline()} and \hyperlink{global__definitions_8h_a715d2499260b59d9c8d45517fd543d15}{get\+Baseline\+Offset()} for an implementation of baseline ordering \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!R\+E\+S\+Y\+N\+C\+\_\+\+L\+I\+M\+IT@{R\+E\+S\+Y\+N\+C\+\_\+\+L\+I\+M\+IT}}
+\index{R\+E\+S\+Y\+N\+C\+\_\+\+L\+I\+M\+IT@{R\+E\+S\+Y\+N\+C\+\_\+\+L\+I\+M\+IT}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{R\+E\+S\+Y\+N\+C\+\_\+\+L\+I\+M\+IT}{RESYNC_LIMIT}}]{\setlength{\rightskip}{0pt plus 5cm}\#define R\+E\+S\+Y\+N\+C\+\_\+\+L\+I\+M\+IT~200}\hypertarget{global__definitions_8h_a734854fd0fb53a3edbfa4712b8ea77d8}{}\label{global__definitions_8h_a734854fd0fb53a3edbfa4712b8ea77d8}
+If the incoming packet has a timestamp which is greater than R\+E\+S\+Y\+N\+C\+\_\+\+L\+I\+M\+IT then a resync is triggered \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!T\+I\+M\+E\+S\+T\+A\+M\+P\+\_\+\+J\+U\+MP@{T\+I\+M\+E\+S\+T\+A\+M\+P\+\_\+\+J\+U\+MP}}
+\index{T\+I\+M\+E\+S\+T\+A\+M\+P\+\_\+\+J\+U\+MP@{T\+I\+M\+E\+S\+T\+A\+M\+P\+\_\+\+J\+U\+MP}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{T\+I\+M\+E\+S\+T\+A\+M\+P\+\_\+\+J\+U\+MP}{TIMESTAMP_JUMP}}]{\setlength{\rightskip}{0pt plus 5cm}\#define T\+I\+M\+E\+S\+T\+A\+M\+P\+\_\+\+J\+U\+MP~({\bf N\+U\+M\+\_\+\+T\+I\+M\+E\+\_\+\+S\+A\+M\+P\+L\+ES}$\ast$2$\ast$F\+F\+T\+\_\+\+S\+I\+ZE)}\hypertarget{global__definitions_8h_a76636fa3796dc7daf49e4bf6e1800c4c}{}\label{global__definitions_8h_a76636fa3796dc7daf49e4bf6e1800c4c}
+Difference in time between consecutive timestamps \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!U\+S\+E\+\_\+\+S\+SE@{U\+S\+E\+\_\+\+S\+SE}}
+\index{U\+S\+E\+\_\+\+S\+SE@{U\+S\+E\+\_\+\+S\+SE}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{U\+S\+E\+\_\+\+S\+SE}{USE_SSE}}]{\setlength{\rightskip}{0pt plus 5cm}\#define U\+S\+E\+\_\+\+S\+SE~1}\hypertarget{global__definitions_8h_a19eb0efaa8a1d77712b26ec708e4fd56}{}\label{global__definitions_8h_a19eb0efaa8a1d77712b26ec708e4fd56}
+Use S\+SE instructions, can either be 1 or 0, S\+SE instructions greatly increase performance. Block size must be either 4,8 or 16 when S\+SE is 1. Ensure that your processor supports the instructions. Most processors will support a block size of 4 or 8(S\+SE or A\+VX instructions), only newer processors support 16(A\+V\+X512 instructions) 
+
+\subsection{Typedef Documentation}
+\index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!Baseline\+Products\+\_\+out@{Baseline\+Products\+\_\+out}}
+\index{Baseline\+Products\+\_\+out@{Baseline\+Products\+\_\+out}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{Baseline\+Products\+\_\+out}{BaselineProducts_out}}]{\setlength{\rightskip}{0pt plus 5cm}typedef struct {\bf Baseline\+Products\+Struct\+\_\+out}  {\bf Baseline\+Products\+\_\+out}}\hypertarget{global__definitions_8h_ad10ea968fb8f53bcca11b6cc0758ff0b}{}\label{global__definitions_8h_ad10ea968fb8f53bcca11b6cc0758ff0b}
+Strut contatining baseline products for a pair of antennas. For each antenna pair, two of these structs are required, one for the imaginary component and the other for the real component \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!Dual\+Poll\+Complex\+\_\+in@{Dual\+Poll\+Complex\+\_\+in}}
+\index{Dual\+Poll\+Complex\+\_\+in@{Dual\+Poll\+Complex\+\_\+in}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{Dual\+Poll\+Complex\+\_\+in}{DualPollComplex_in}}]{\setlength{\rightskip}{0pt plus 5cm}typedef struct {\bf Dual\+Poll\+Complex\+Struct\+\_\+in}  {\bf Dual\+Poll\+Complex\+\_\+in}}\hypertarget{global__definitions_8h_a15a16a561045b7779c1db048066fc364}{}\label{global__definitions_8h_a15a16a561045b7779c1db048066fc364}
+Struct storing dual pol complex samples as received by the F-\/\+Engines \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!Pipeline\+Counts@{Pipeline\+Counts}}
+\index{Pipeline\+Counts@{Pipeline\+Counts}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{Pipeline\+Counts}{PipelineCounts}}]{\setlength{\rightskip}{0pt plus 5cm}typedef struct {\bf Pipeline\+Counts\+Struct}  {\bf Pipeline\+Counts}}\hypertarget{global__definitions_8h_af8026c7301755dfceba7e6cda5830e46}{}\label{global__definitions_8h_af8026c7301755dfceba7e6cda5830e46}
+Struct counters for different stages in the pipeline. This is used to monitor flow rates through the pipeline \index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!X\+Gpu\+Input\+Buffer\+Packet@{X\+Gpu\+Input\+Buffer\+Packet}}
+\index{X\+Gpu\+Input\+Buffer\+Packet@{X\+Gpu\+Input\+Buffer\+Packet}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{X\+Gpu\+Input\+Buffer\+Packet}{XGpuInputBufferPacket}}]{\setlength{\rightskip}{0pt plus 5cm}typedef struct {\bf X\+Gpu\+Input\+Buffer\+Packet\+Struct}  {\bf X\+Gpu\+Input\+Buffer\+Packet}}\hypertarget{global__definitions_8h_aca3be2a33f2e7a79e14ba4a3d6f77268}{}\label{global__definitions_8h_aca3be2a33f2e7a79e14ba4a3d6f77268}
+Struct pointing to location in pinned host memory that will be transferred to the G\+PU. The \hyperlink{class_x_gpu_buffers}{X\+Gpu\+Buffers} class manages the allocation of this memory, the X\+Gpu\+Input\+Buffer\+Packet just stores the pointer and index of this in the buffer The samples are ordered from \mbox{[}time\mbox{]}\mbox{[}channel\mbox{]}\mbox{[}antenna\mbox{]}\mbox{[}polarization\mbox{]}\mbox{[}complexity\mbox{]}(ordered from slowest to fastest changing values) when not using D\+P4A instructions. 
+\begin{DoxyParams}{Parameters}
+{\em data\+\_\+ptr} & Pointer to location in pinned host memory buffer \\
+\hline
+{\em offset} & The position of this packet within the other packets in the buffer \\
+\hline
+\end{DoxyParams}
+\index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!X\+Gpu\+Output\+Buffer\+Packet@{X\+Gpu\+Output\+Buffer\+Packet}}
+\index{X\+Gpu\+Output\+Buffer\+Packet@{X\+Gpu\+Output\+Buffer\+Packet}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{X\+Gpu\+Output\+Buffer\+Packet}{XGpuOutputBufferPacket}}]{\setlength{\rightskip}{0pt plus 5cm}typedef struct {\bf X\+Gpu\+Output\+Buffer\+Packet\+Struct}  {\bf X\+Gpu\+Output\+Buffer\+Packet}}\hypertarget{global__definitions_8h_a7919954aecf9a2c4521f0af7c1109498}{}\label{global__definitions_8h_a7919954aecf9a2c4521f0af7c1109498}
+Struct pointing to the location in host memory that the data that is generated by x\+G\+PU is stored. The data is arranged as \mbox{[}complexity\mbox{]}\mbox{[}channel\mbox{]}\mbox{[}antenna\mbox{]}\mbox{[}antenna\mbox{]}(ordered from slowest to fastest changing values). The function \hyperlink{global__definitions_8h_a715d2499260b59d9c8d45517fd543d15}{get\+Baseline\+Offset()} shows the ordering of the \mbox{[}antenna\mbox{]}\mbox{[}antenna\mbox{]} section. This ordering is complicated as the baselines are split into quadrants based on whether antenna1/antenna2 are odd or even 
+\begin{DoxyParams}{Parameters}
+{\em data\+\_\+ptr} & Pointer to location in pinned host memory buffer \\
+\hline
+{\em offset} & The position of this packet within the other packets in the buffer \\
+\hline
+\end{DoxyParams}
+
+
+\subsection{Function Documentation}
+\index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!display\+Baseline@{display\+Baseline}}
+\index{display\+Baseline@{display\+Baseline}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{display\+Baseline(\+Baseline\+Products\+\_\+out $\ast$\+X\+Gpu\+Packet\+Out, int i, int j)}{displayBaseline(BaselineProducts_out *XGpuPacketOut, int i, int j)}}]{\setlength{\rightskip}{0pt plus 5cm}void display\+Baseline (
+\begin{DoxyParamCaption}
+\item[{{\bf Baseline\+Products\+\_\+out} $\ast$}]{X\+Gpu\+Packet\+Out, }
+\item[{int}]{i, }
+\item[{int}]{j}
+\end{DoxyParamCaption}
+)}\hypertarget{global__definitions_8h_a73aa3958c89ff5dd44c96d2994acad40}{}\label{global__definitions_8h_a73aa3958c89ff5dd44c96d2994acad40}
+
+
+Function to print out an individual baseline. It is required that i$>$j or else an error is thrown. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em X\+Gpu\+Packet\+Out} & Pointer to packet containing the output baselines \\
+\hline
+\mbox{\tt in}  & {\em i} & Index of first antenna. \\
+\hline
+\mbox{\tt in}  & {\em j} & Index of second antenna \\
+\hline
+\end{DoxyParams}
+\index{global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}!get\+Baseline\+Offset@{get\+Baseline\+Offset}}
+\index{get\+Baseline\+Offset@{get\+Baseline\+Offset}!global\+\_\+definitions.\+h@{global\+\_\+definitions.\+h}}
+\subsubsection[{\texorpdfstring{get\+Baseline\+Offset(int ant0, int ant1)}{getBaselineOffset(int ant0, int ant1)}}]{\setlength{\rightskip}{0pt plus 5cm}int get\+Baseline\+Offset (
+\begin{DoxyParamCaption}
+\item[{int}]{ant0, }
+\item[{int}]{ant1}
+\end{DoxyParamCaption}
+)}\hypertarget{global__definitions_8h_a715d2499260b59d9c8d45517fd543d15}{}\label{global__definitions_8h_a715d2499260b59d9c8d45517fd543d15}
+
+
+Function to get the index of a single baseline in a packet of baselines output from x\+G\+PU. This offset is not in bytes, but in baselines. It needs to be multiplied by size of a baseline to search through bytes. It is required that ant0$>$ant1 or else an error is thrown. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em X\+Gpu\+Packet\+Out} & Pointer to packet containing the output baselines \\
+\hline
+\mbox{\tt in}  & {\em ant0} & Index of first antenna. \\
+\hline
+\mbox{\tt in}  & {\em ant1} & Index of second antenna \\
+\hline
+\end{DoxyParams}
