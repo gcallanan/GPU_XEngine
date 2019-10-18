@@ -8,14 +8,16 @@ OBJECTS = xGpu_Hashpipe_databuf.o \
 				xGpu_Hashpipe_end_thread.o \
 				buffer_thread.o\
 				../xGpu_TBB/Buffer.o\
-				../xGpu_TBB/global_definitions.o
+				../xGpu_TBB/global_definitions.o\
+				SpeadRxHashpipe.o\
+				xGpu_Hashpipe_spead_rx_thread.o
 
 
 NVCCFLAGS = -g -O3 -shared -fpic -lstdc++ -mavx -msse4 -std=c++11 \
             -I. -I$(CUDA_DIR)/include -I/usr/local/include  -I../xGpu_TBB \
             -L. -L /usr/local/lib 
 
-LFLAGS = -lboost_system -lspead2 -lpthread -lpcap -lrdmacm -libverbs -lboost_program_options -lhashpipe -lhashpipestatus 
+LFLAGS =  -lboost_system -lpthread -lpcap -lrdmacm -libverbs -lboost_program_options -lhashpipe -lhashpipestatus -lspead2
 
 xGpu_Hashpipe.so: $(OBJECTS)
 	$(NVCC) $(NVCCFLAGS) $(OBJECTS) -o $@ $(LFLAGS)
@@ -75,3 +77,8 @@ clean:
 					  #SpeadRxHashpipe.h \
 					  					  SpeadRxHashpipe.cpp \
 					  SpeadRxHashpipe.h
+
+
+
+
+					  #-Wl,--whole-archive -lspead2 -Wl,--no-whole-archive

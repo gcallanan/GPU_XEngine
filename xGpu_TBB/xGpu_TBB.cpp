@@ -164,10 +164,11 @@ int main(int argc, char** argv){
         prevPacketsTooLate = pipelineCounts.packetsTooLate;
 
         start=now;
+        break;
 
     }
     std::cout<<"Done Receiving Packets" << std::endl;  
-    //g.wait_for_all();
+    g.wait_for_all();
     //std::cout<<"All streams finished processing, exiting program."<<std::endl;
     return 0;
 }
