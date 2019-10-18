@@ -4,6 +4,10 @@
 
 std::atomic<int> timeSincePacketsLastMissing; 
 
+#define BLOCK_SIZE 8//Must be a power of 2
+/** Use SSE instructions, can either be 1 or 0, SSE instructions greatly increase performance. Block size must be either 4,8 or 16 when SSE is 1. Ensure that your processor supports the instructions. Most processors will support a block size of 4 or 8(SSE or AVX instructions), only newer processors support 16(AVX512 instructions)*/
+#define USE_SSE 1
+
 Transpose::Transpose(boost::shared_ptr<XGpuBufferManager> xGpuBufferManager,int stageIndex):xGpuBufferManager(xGpuBufferManager),stageIndex(stageIndex){
     this->stageName = "Transpose " + std::to_string(stageIndex);
     this->armortiserMaxSize = ARMORTISER_TO_GPU_SIZE;

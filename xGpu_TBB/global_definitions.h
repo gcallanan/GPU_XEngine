@@ -62,18 +62,16 @@
 #define DEFAULT_ACCUMULATIONS_THRESHOLD ((int)(1632*3))
 
 /** Before packets are handed over to the next stage of the pipeline they are grouped into a larger packet to reduce thread overhead. ARMORTISER_SIZE specifies the number of packets to group*/
-#define ARMORTISER_SIZE 100
+#define ARMORTISER_SIZE 300
 
 /** Same function as ARMORTISER_SIZE but specifically implemented for the transmission from the Transpose to the GPUWrapper class. This class needs to have a smaller ARMORTISER_SIZE as the packets q ueued here are holding GPU memory which we want to use efficiently */
-#define ARMORTISER_TO_GPU_SIZE 10
+#define ARMORTISER_TO_GPU_SIZE 20
 
 //Transpose 
 /** Number of stages for the reoder pipeline module. Each stage is processed by a different thread */
 #define NUM_TRANSPOSE_STAGES 2
 /** Block size to perform the transpose, must be a power of two.*/
-#define BLOCK_SIZE 8//Must be a power of 2
-/** Use SSE instructions, can either be 1 or 0, SSE instructions greatly increase performance. Block size must be either 4,8 or 16 when SSE is 1. Ensure that your processor supports the instructions. Most processors will support a block size of 4 or 8(SSE or AVX instructions), only newer processors support 16(AVX512 instructions)*/
-#define USE_SSE 1
+
 
 //Global Structs
 
