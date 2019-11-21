@@ -7,6 +7,7 @@ std::atomic<int> timeSincePacketsLastMissing;
 #define BLOCK_SIZE 8//Must be a power of 2
 /** Use SSE instructions, can either be 1 or 0, SSE instructions greatly increase performance. Block size must be either 4,8 or 16 when SSE is 1. Ensure that your processor supports the instructions. Most processors will support a block size of 4 or 8(SSE or AVX instructions), only newer processors support 16(AVX512 instructions)*/
 #define USE_SSE 1
+#define USE_SSE_INPUT 0
 
 Transpose::Transpose(boost::shared_ptr<XGpuBufferManager> xGpuBufferManager,int stageIndex):xGpuBufferManager(xGpuBufferManager),stageIndex(stageIndex){
     this->stageName = "Transpose " + std::to_string(stageIndex);
@@ -40,21 +41,34 @@ OutputPacketQueuePtr Transpose::processPacket(boost::shared_ptr<PipelinePacket> 
     
     for (size_t fengId = (NUM_ANTENNAS/NUM_TRANSPOSE_STAGES)*(stageIndex); fengId < (NUM_ANTENNAS/NUM_TRANSPOSE_STAGES)*(stageIndex+1); fengId+=BLOCK_SIZE)
     {
+        #if USE_SSE_INPUT == 0
         DualPollComplex_in * inputArray[BLOCK_SIZE];
+        #endif
         bool packetPresent[BLOCK_SIZE];
         int32_t toTransfer[BLOCK_SIZE];
 
+        #if USE_SSE_INPUT == 0
         for (size_t block_i = 0; block_i < BLOCK_SIZE; block_i++)
         {
             inputArray[block_i] = (DualPollComplex_in*)inPacket_cast->getDataPtr(fengId+block_i);
+        }
+        #endif
+        for (size_t block_i = 0; block_i < BLOCK_SIZE; block_i++)
+        {
             packetPresent[block_i] = inPacket_cast->isPresent(fengId+block_i);
-        }  
+        }
 
         for(int channel_index = 0; channel_index < NUM_CHANNELS_PER_XENGINE; channel_index++)
         {
+            #if USE_SSE_INPUT == 0
             for(int time_index = 0; time_index < NUM_TIME_SAMPLES; time_index++)
+            #else
+            for(int time_index = 0; time_index < NUM_TIME_SAMPLES; time_index+=BLOCK_SIZE)
+            #endif
             {
+                #if USE_SSE_INPUT == 0
                 DualPollComplex_in* dest_ptr = &(((DualPollComplex_in*) outPacket->getDataPointer())[time_index*NUM_CHANNELS_PER_XENGINE*NUM_ANTENNAS+channel_index*NUM_ANTENNAS+fengId]);
+                #endif
                 #if USE_SSE == 1
                     #if BLOCK_SIZE == 16
                         volatile __m512 reg;// = _mm512_setzero_pd();
@@ -69,17 +83,46 @@ OutputPacketQueuePtr Transpose::processPacket(boost::shared_ptr<PipelinePacket> 
                             }
                             reg = _mm512_insertf32x4(reg,(__m128)reg_temp,block_i);
                         }
-                        _mm512_storeu_ps((__m512*)dest_ptr,reg);
+                        _mm512_store_ps((__m512*)dest_ptr,reg);
 
                     #elif BLOCK_SIZE == 8
-                        __m256i reg = _mm256_setzero_si256();
-                        for (size_t block_i = 0; block_i < BLOCK_SIZE; block_i++)
-                        {
-                            if(packetPresent[block_i]){
-                                reg = _mm256_insert_epi32(reg,*((int32_t*) &inputArray[block_i][channel_index*NUM_TIME_SAMPLES + time_index]),block_i);
+                        #if USE_SSE_INPUT == 0
+                            __m256i reg = _mm256_setzero_si256();
+                            for (size_t block_i = 0; block_i < BLOCK_SIZE; block_i++)
+                            {
+                                if(packetPresent[block_i]){
+                                    reg = _mm256_insert_epi32(reg,*((int32_t*) &inputArray[block_i][channel_index*NUM_TIME_SAMPLES + time_index]),block_i);
+                                }
                             }
-                        }
-                        _mm256_storeu_si256((__m256i*)dest_ptr,reg);
+                            //std::cout << dest_ptr << " " << ((int64_t) dest_ptr) % 32 << std::endl;
+                            //_mm256_stream_si256((__m256i*)dest_ptr,reg);
+                            //_mm256_storeu_si256((__m256i*)dest_ptr,reg);
+                            _mm256_store_si256((__m256i*)dest_ptr,reg);
+                        #else
+                            //std::cout<< "F:" << fengId <<" T:"<< time_index << std::endl;
+                            __m256i reg_in[BLOCK_SIZE];
+                            for (size_t block_feng_index = 0; block_feng_index < BLOCK_SIZE; block_feng_index++)
+                            {
+                                if(packetPresent[block_feng_index]){
+                                    __m256i * ptr =  (__m256i*) &(((DualPollComplex_in*)inPacket_cast->getDataPtr(fengId+block_feng_index))[channel_index*NUM_TIME_SAMPLES + time_index]);
+                                    reg_in[block_feng_index] = _mm256_loadu_si256(ptr);
+                                }else{
+                                    reg_in[block_feng_index] = _mm256_setzero_si256();
+                                }
+                            }
+
+                            for (size_t block_time_index = 0; block_time_index < BLOCK_SIZE; block_time_index++)
+                            {
+                                __m256i reg_out = _mm256_setzero_si256();
+                                DualPollComplex_in* dest_ptr = &(((DualPollComplex_in*) outPacket->getDataPointer())[(time_index+block_time_index)*NUM_CHANNELS_PER_XENGINE*NUM_ANTENNAS+channel_index*NUM_ANTENNAS+fengId]);
+                                //std::cout <<  << std::endl;
+                                for (size_t block_feng_index = 0; block_feng_index < BLOCK_SIZE; block_feng_index++){
+                                    __m256i tmpReg = _mm256_maskz_slli_epi32((1<<block_feng_index),reg_in[block_feng_index],block_feng_index);
+                                    reg_out = _mm256_or_si256(reg_out,tmpReg);
+                                }
+                                _mm256_store_si256((__m256i*)dest_ptr,reg_out);
+                            }
+                        #endif
                     #elif BLOCK_SIZE == 4
                         __m128i reg = _mm_setzero_si128();
                         for (size_t block_i = 0; block_i < BLOCK_SIZE; block_i++)

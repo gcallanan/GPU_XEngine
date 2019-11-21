@@ -8,7 +8,9 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <mutex>
+
 #include "PipelinePackets.h"
+#include "Buffer.h"
 
 #define NUM_SPEAD2_RX_THREADS 1
 
@@ -20,12 +22,14 @@ class SpeadRx{
             std::promise<void> stop_promise;
             multi_node * nextNodeNested;
             boost::shared_ptr<PacketArmortiser> outPacketArmortiser;
+            boost::shared_ptr<Buffer>  buffer;
         public:
             using spead2::recv::stream::stream;
             virtual void stop_received() override;
             void join();
             void addNextNodePointer(multi_node * nextNodeNested);
             void addPacketArmortiser(boost::shared_ptr<PacketArmortiser> outPacketArmortiser);
+            void addBuffer(boost::shared_ptr<Buffer> buffer);
             #if NUM_SPEAD2_RX_THREADS > 1
                 std::mutex mutex;
             #endif
@@ -41,6 +45,7 @@ class SpeadRx{
         static boost::shared_ptr<PipelinePacket> process_heap(boost::shared_ptr<spead2::recv::heap> fheap);
         multi_node * nextNode;
         boost::shared_ptr<PacketArmortiser> outPacketArmortiser;
+        boost::shared_ptr<Buffer>  buffer;
 };
 
 

@@ -69,7 +69,7 @@
 
 //Transpose 
 /** Number of stages for the reoder pipeline module. Each stage is processed by a different thread */
-#define NUM_TRANSPOSE_STAGES 2
+#define NUM_TRANSPOSE_STAGES 1
 /** Block size to perform the transpose, must be a power of two.*/
 
 
@@ -139,6 +139,6 @@ void displayBaseline(BaselineProducts_out* XGpuPacketOut, int i, int j);
 
 //Global Variables;
 extern PipelineCounts pipelineCounts;
-
+extern std::atomic<int> speadTxSuccessCount;
 
 #endif

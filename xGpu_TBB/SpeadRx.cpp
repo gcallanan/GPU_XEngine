@@ -2,13 +2,13 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
-
-
 SpeadRx::SpeadRx(multi_node * nextNode, int rxPort): worker(NUM_SPEAD2_RX_THREADS),stream(worker),n_complete(0),endpoint(boost::asio::ip::address_v4::any(), rxPort),nextNode(nextNode){
     stream.addNextNodePointer(nextNode);
     stream.emplace_reader<spead2::recv::udp_reader>(endpoint, spead2::recv::udp_reader::default_max_size, 8 * 1024 * 1024);
     outPacketArmortiser = boost::make_shared<PacketArmortiser>();
+    buffer = boost::make_shared<Buffer>();
     stream.addPacketArmortiser(outPacketArmortiser);
+    stream.addBuffer(buffer);
 }
 
 boost::shared_ptr<PipelinePacket> SpeadRx::process_heap(boost::shared_ptr<spead2::recv::heap> fheap){
@@ -65,13 +65,16 @@ void SpeadRx::trivial_stream::heap_ready(spead2::recv::live_heap &&heap)
               mutex.lock();
             #endif
             pipelineCounts.SpeadRxStage++;
-            outPacketArmortiser->addPacket(SpeadRxPacket);
-            if(outPacketArmortiser->getArmortiserSize() >= NUM_ANTENNAS*ARMORTISER_SIZE){
-              if(!nextNodeNested->try_put(outPacketArmortiser)){
-                std::cout << "Packet Failed to be passed to Buffer class" << std::endl;
-              }
-              outPacketArmortiser = boost::make_shared<PacketArmortiser>();
-            }
+            OutputPacketQueuePtr outPacketQueue = buffer->processPacket(SpeadRxPacket);
+            for(boost::shared_ptr<PipelinePacket> outPacket: *outPacketQueue){
+                outPacketArmortiser->addPacket(boost::dynamic_pointer_cast<PipelinePacket>(outPacket));
+                if(outPacketArmortiser->getArmortiserSize() >=  ARMORTISER_SIZE){
+                    if(!nextNodeNested->try_put(outPacketArmortiser)){
+                        //std::cout << "Packet Failed to be passed to next class" << std::endl;
+                    }
+                    outPacketArmortiser = boost::make_shared<PacketArmortiser>();
+                }
+             }
             #if NUM_SPEAD2_RX_THREADS > 1
               mutex.unlock();
             #endif
@@ -101,4 +104,9 @@ void SpeadRx::trivial_stream::addNextNodePointer(multi_node * nextNode){
 
 void SpeadRx::trivial_stream::addPacketArmortiser(boost::shared_ptr<PacketArmortiser> outPacketArmortiser){
     this->outPacketArmortiser = outPacketArmortiser;
+}
+
+
+void SpeadRx::trivial_stream::addBuffer(boost::shared_ptr<Buffer> buffer){
+    this->buffer = buffer;
 }

@@ -1,7 +1,7 @@
 #include "global_definitions.h"
 
 PipelineCounts pipelineCounts = {};
-int speadTxSuccessCount = 0;
+std::atomic<int> speadTxSuccessCount;
 
 int getBaselineOffset(int ant0, int ant1){
     if(ant0>ant1)

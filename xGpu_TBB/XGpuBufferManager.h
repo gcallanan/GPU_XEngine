@@ -14,6 +14,9 @@
 /** Number of output xGPU packets to allocate space for. This needs to be greater than 1 so that another output packet can be allocated while another is being processed. However this does not need to be too large as a new packet gets created in the order of seconds.*/
 #define DEFAULT_XGPU_OUTPUT_BUFFERS_THRESHOLD 4
 
+/** Integer boundary to align packets on, useful for cache efficiency and AVX instructions*/
+#define ALIGNMENT_BOUNDARY 64
+
 
 /**
  * Struct pointing to location in pinned host memory that will be transferred to the GPU. The XGpuBufferManager class manages the allocation of this memory, the XGpuInputBufferPacket just stores the pointer and index of this in the buffer 
@@ -58,7 +61,7 @@ class XGpuBufferManager{
           int xgpu_error = 0;
           index_CpuToGpu=0;
           lockedLocations_CpuToGpu=0;
-          context.array_len = xgpu_info.vecLength*DEFAULT_ACCUMULATIONS_THRESHOLD;//Determines size of input ring buffer. With xgpu_info.vecLength being the size of a single input packet and DEFAULT_ACCUMULATIONS_THRESHOLD being the total number of packets to be able to store
+          context.array_len = xgpu_info.vecLength*DEFAULT_ACCUMULATIONS_THRESHOLD+ALIGNMENT_BOUNDARY;//Determines size of input ring buffer. With xgpu_info.vecLength being the size of a single input packet and DEFAULT_ACCUMULATIONS_THRESHOLD being the total number of packets to be able to store. Alignment boundary ensures there is enough space to shift packet start location to an AVX instrinsics boundary
           context.matrix_len = xgpu_info.matLength*DEFAULT_XGPU_OUTPUT_BUFFERS_THRESHOLD;//Determines size of output ring buffer. With xgpu_info.matLength being the size of a single output packet and DEFAULT_XGPU_OUTPUT_BUFFERS_THRESHOLD being the total number of packets to be able to store
           context.array_h = (ComplexInput*)malloc(context.array_len*sizeof(ComplexInput));
           context.matrix_h = (Complex*)malloc(context.matrix_len*sizeof(Complex));
@@ -87,6 +90,7 @@ class XGpuBufferManager{
           mutex_array_CpuToGpu[currentIndex].lock();
           XGpuInputBufferPacket structOut;
           structOut.data_ptr = (uint8_t*)(context.array_h + xgpu_info.vecLength*currentIndex);
+          structOut.data_ptr = structOut.data_ptr + (ALIGNMENT_BOUNDARY - ((uint64_t)structOut.data_ptr))%ALIGNMENT_BOUNDARY;
           structOut.offset = currentIndex;
           lockedLocations_CpuToGpu++;
           if(lockedLocations_CpuToGpu > DEFAULT_ACCUMULATIONS_THRESHOLD-10){

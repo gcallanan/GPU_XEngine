@@ -66,6 +66,7 @@ int main(int argc, char** argv){
     tbb::flow::graph g;
 
     //Multithreading Information
+    speadTxSuccessCount = 0;
     pipelineCounts.SpeadRxStage=1;
     pipelineCounts.BufferStage=1;
     for (size_t i = 0; i < NUM_TRANSPOSE_STAGES; i++){
@@ -90,7 +91,7 @@ int main(int argc, char** argv){
     boost::shared_ptr<XGpuBufferManager> xGpuBuffer = boost::make_shared<XGpuBufferManager>();
     //Construct Graph Nodes
 
-    multi_node bufferNode(g,1,Buffer());
+    //multi_node bufferNode(g,1,Buffer());
     std::vector<boost::shared_ptr<multi_node> > transposeStagesList;
     for (size_t i = 0; i < NUM_TRANSPOSE_STAGES; i++)
     {
@@ -98,10 +99,9 @@ int main(int argc, char** argv){
     }
     multi_node gpuNode(g,1,GPUWrapper(xGpuBuffer));
     multi_node txNode(g,1,SpeadTx(txPort));
-    SpeadRx rx(&bufferNode,rxPort);
+    SpeadRx rx(&(*transposeStagesList[0]),rxPort);
     
     //Construct Edges
-    tbb::flow::make_edge(tbb::flow::output_port<0>(bufferNode), *transposeStagesList[0]);
     for (size_t i = 1; i < NUM_TRANSPOSE_STAGES; i++)
     {
         tbb::flow::make_edge(tbb::flow::output_port<0>(*transposeStagesList[i-1]), *transposeStagesList[i]);
@@ -154,7 +154,7 @@ int main(int argc, char** argv){
             }
         }
 
-        prevSpeadRxStage = pipelineCounts.SpeadRxStage;
+        prevSpeadRxStage = pipelineCounts.SpeadRxStage; 
         prevBufferStage = pipelineCounts.BufferStage;
         for (size_t i = 0; i < NUM_TRANSPOSE_STAGES; i++){
             prevTransposeStage[i] = pipelineCounts.TransposeStage[i];
@@ -164,8 +164,6 @@ int main(int argc, char** argv){
         prevPacketsTooLate = pipelineCounts.packetsTooLate;
 
         start=now;
-        break;
-
     }
     std::cout<<"Done Receiving Packets" << std::endl;  
     g.wait_for_all();
