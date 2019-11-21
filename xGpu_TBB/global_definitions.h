@@ -65,7 +65,7 @@
 #define ARMORTISER_SIZE 300
 
 /** Same function as ARMORTISER_SIZE but specifically implemented for the transmission from the Transpose to the GPUWrapper class. This class needs to have a smaller ARMORTISER_SIZE as the packets q ueued here are holding GPU memory which we want to use efficiently */
-#define ARMORTISER_TO_GPU_SIZE 20
+#define ARMORTISER_TO_GPU_SIZE 40
 
 //Transpose 
 /** Number of stages for the reoder pipeline module. Each stage is processed by a different thread */

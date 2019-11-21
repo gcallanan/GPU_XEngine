@@ -24,8 +24,10 @@ class PipelineStage{
         virtual OutputPacketQueuePtr processPacket(boost::shared_ptr<PipelinePacket> inPacket) = 0;
 
         void operator()(boost::shared_ptr<PipelinePacket> inPacket, multi_node::output_ports_type &op){
+            if(outPacketArmortiser==nullptr){
+                outPacketArmortiser=boost::make_shared<PacketArmortiser>();
+            }
             boost::shared_ptr<PacketArmortiser> inPacketQueue = boost::dynamic_pointer_cast<PacketArmortiser>(inPacket);
-            
             while(inPacketQueue->getArmortiserSize() > 0){
                 boost::shared_ptr<PipelinePacket> inPacket_pop = inPacketQueue->removePacket();
                 this->packetsProcessed++;
@@ -37,14 +39,14 @@ class PipelineStage{
                             //std::cout << "Packet Failed to be passed to next class" << std::endl;
                         }
                         outPacketArmortiser = boost::make_shared<PacketArmortiser>();
+                        outPacket = nullptr;
                     }
                 }
-                
             }
+            inPacketQueue = nullptr;
         }
 
         PipelineStage(){
-            outPacketArmortiser = boost::make_shared<PacketArmortiser>();
         }
 
         int getPacketsProcessed(){

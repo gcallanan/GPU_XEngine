@@ -104,7 +104,6 @@ class XGpuBufferManager{
          * \param[in] blockToFree The index of the object to free. This index is the XGpuInputBufferPacket.offset value.
          */
         void freeMemory_CpuToGpu(int blockToFree){
-          //std::cout<<"cleared" <<std::endl;
           mutex_array_CpuToGpu[blockToFree].unlock();
           lockedLocations_CpuToGpu--;
         }
