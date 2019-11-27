@@ -106,7 +106,7 @@ int main(int argc, char** argv){
     {
         tbb::flow::make_edge(tbb::flow::output_port<0>(*transposeStagesList[i-1]), *transposeStagesList[i]);
     }
-    //tbb::flow::make_edge(tbb::flow::output_port<0>(*transposeStagesList[NUM_TRANSPOSE_STAGES-1]), gpuNode);
+    tbb::flow::make_edge(tbb::flow::output_port<0>(*transposeStagesList[NUM_TRANSPOSE_STAGES-1]), gpuNode);
     tbb::flow::make_edge(tbb::flow::output_port<0>(gpuNode),txNode);
 
     //Start Graph

@@ -35,7 +35,7 @@ RPATH =
 LIBXGPU = libxgpu.dll
 else
 
-NVCCFLAGS = -std=c++11 -Xcompiler -D_REENTRANT -Xcompiler -Wall -Xcompiler -Wno-unused-function -ftz=true -Xcompiler -mavx512f -Xcompiler -mavx512vl
+NVCCFLAGS = -std=c++11 -Xcompiler -D_REENTRANT -Xcompiler -Wall -Xcompiler -Wno-unused-function -ftz=true -Xcompiler -mavx
 #-Xcompiler -march=skylake
 
 ifneq ($(strip $(OSTYPE)),osx)

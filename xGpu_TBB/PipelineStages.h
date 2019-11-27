@@ -36,7 +36,7 @@ class PipelineStage{
                     outPacketArmortiser->addPacket(boost::dynamic_pointer_cast<PipelinePacket>(outPacket));
                     if(outPacketArmortiser->getArmortiserSize() >= this->armortiserMaxSize){
                         if(!std::get<0>(op).try_put(outPacketArmortiser)){
-                            //std::cout << "Packet Failed to be passed to next class" << std::endl;
+//                            std::cout << "Packet Failed to be passed to next class" << std::endl;
                         }
                         outPacketArmortiser = boost::make_shared<PacketArmortiser>();
                         outPacket = nullptr;

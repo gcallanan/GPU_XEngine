@@ -1,6 +1,6 @@
 #include "GPUWrapper.h"
 
-GPUWrapper::GPUWrapper(boost::shared_ptr<XGpuBufferManager> xGpuBufferManager): accumulationsThreshold(400),numAccumulations(0),xGpuBufferManager(xGpuBufferManager),storageQueue(){
+GPUWrapper::GPUWrapper(boost::shared_ptr<XGpuBufferManager> xGpuBufferManager): accumulationsThreshold(408),numAccumulations(0),xGpuBufferManager(xGpuBufferManager),storageQueue(){
     this->stageName = "GPUWrapper";
     this->armortiserMaxSize = 1;
     oldest_timestamp = 0;

@@ -26,6 +26,7 @@ import argparse
 
 logging.basicConfig(level=logging.INFO)
 
+NUM_ACCUMULATIONS = 408
 NUM_CHANNELS_PER_XENGINE=16
 NUM_BASELINES=2112
 
@@ -63,7 +64,7 @@ def getBaseline(data_arr, i, j, polarisationProduct,poll):
     array = [0]*16
     for k in range(0,NUM_CHANNELS_PER_XENGINE):
         baseline_index = getBaselineOffset(i,j)
-        array[k] = data_arr[k][baseline_index][polarisationProduct][poll]/256/1600*4
+        array[k] = data_arr[k][baseline_index][polarisationProduct][poll]/256/NUM_ACCUMULATIONS
 #        print(k,baseline_index,i,j)
 #        print(data_arr[k][baseline_index][0][0]/256/1600)
     #print(array)
@@ -112,21 +113,22 @@ plt.grid()
 ax4 = fig.add_subplot(2,2,4)
 ax4.set_title('<Pol 2, Pol2>')
 plt.grid()
-line11, = ax1.plot(range(0,16), range(-128,128,16), 'b-x')
+den = 8
+line11, = ax1.plot(range(0,16), range(-128//den,128//den,16//den), 'b-x')
 line11.set_label('R')
-line12, = ax1.plot(range(0,16), range(-128,128,16), 'r-x')
+line12, = ax1.plot(range(0,16), range(-128//den,128//den,16//den), 'r-x')
 line12.set_label('I')
-line21, = ax2.plot(range(0,16), range(-128,128,16), 'b-x')
+line21, = ax2.plot(range(0,16), range(-128//den,128//den,16//den), 'b-x')
 line21.set_label('R')
-line22, = ax2.plot(range(0,16), range(-128,128,16), 'r-x')
+line22, = ax2.plot(range(0,16), range(-128//den,128//den,16//den), 'r-x')
 line22.set_label('I')
-line31, = ax3.plot(range(0,16), range(-128,128,16), 'b-x')
+line31, = ax3.plot(range(0,16), range(-128//den,128//den,16//den), 'b-x')
 line31.set_label('R')
-line32, = ax3.plot(range(0,16), range(-128,128,16), 'r-x')
+line32, = ax3.plot(range(0,16), range(-128//den,128//den,16//den), 'r-x')
 line32.set_label('I')
-line41, = ax4.plot(range(0,16), range(-128,128,16), 'b-x')
+line41, = ax4.plot(range(0,16), range(-128//den,128//den,16//den), 'b-x')
 line41.set_label('R')
-line42, = ax4.plot(range(0,16), range(-128,128,16), 'r-x')
+line42, = ax4.plot(range(0,16), range(-128//den,128//den,16//den), 'r-x')
 line42.set_label('I')
 
 ax1.legend()
