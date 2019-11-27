@@ -62,6 +62,10 @@ def getBaselineOffset(ant0,ant1):
 
 def getBaseline(data_arr, i, j, polarisationProduct,poll):
     array = [0]*16
+    #print("Input Packet Sum: ", np.sum(data_arr))
+    #print(data_arr.shape[0])
+    #print(data_arr[0])
+    #print(np.nonzero(data_arr[0]))
     for k in range(0,NUM_CHANNELS_PER_XENGINE):
         baseline_index = getBaselineOffset(i,j)
         array[k] = data_arr[k][baseline_index][polarisationProduct][poll]/256/NUM_ACCUMULATIONS
@@ -113,7 +117,7 @@ plt.grid()
 ax4 = fig.add_subplot(2,2,4)
 ax4.set_title('<Pol 2, Pol2>')
 plt.grid()
-den = 8
+den = 1
 line11, = ax1.plot(range(0,16), range(-128//den,128//den,16//den), 'b-x')
 line11.set_label('R')
 line12, = ax1.plot(range(0,16), range(-128//den,128//den,16//den), 'r-x')

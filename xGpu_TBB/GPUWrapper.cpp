@@ -34,6 +34,7 @@ OutputPacketQueuePtr GPUWrapper::processPacket(boost::shared_ptr<PipelinePacket>
     }
     
     context->input_offset = inPacket_cast->getBufferOffset()*NUM_CHANNELS_PER_XENGINE*NUM_ANTENNAS*NUM_TIME_SAMPLES;
+    context->input_offset = context->input_offset + ((ALIGNMENT_BOUNDARY - ((uint64_t)context->array_h))%ALIGNMENT_BOUNDARY)/2;//I expect the 24 to be ((ALIGNMENT_BOUNDARY - ((uint64_t)context->array_h))%ALIGNMENT_BOUNDARY)/4 which equates to 12, instead i get 24. I do not know why this is twice what i expect? This is hardcoded for now;;
     context->output_offset = tempGpuWrapperPacket->getBufferOffset()*NUM_CHANNELS_PER_XENGINE*NUM_BASELINES*2*2;//2 For the real/imaginary components and 2 for the 4 products per baseline
 
     if(numAccumulations == accumulationsThreshold-1){

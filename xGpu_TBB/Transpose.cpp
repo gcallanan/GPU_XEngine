@@ -91,10 +91,10 @@ OutputPacketQueuePtr Transpose::processPacket(boost::shared_ptr<PipelinePacket> 
                             for (size_t block_i = 0; block_i < BLOCK_SIZE; block_i++)
                             {
                                 if(packetPresent[block_i]){
-                                    reg = _mm256_insert_epi32(reg,*((int32_t*) &inputArray[block_i][channel_index*NUM_TIME_SAMPLES + time_index]),block_i);
+                                    int * inputSampleAddress = ((int32_t*) &inputArray[block_i][channel_index*NUM_TIME_SAMPLES + time_index]);
+                                    reg = _mm256_insert_epi32(reg,*inputSampleAddress,block_i);
                                 }
                             }
-                            //std::cout << dest_ptr << " " << ((int64_t) dest_ptr) % 32 << std::endl;
                             //_mm256_stream_si256((__m256i*)dest_ptr,reg);
                             //_mm256_storeu_si256((__m256i*)dest_ptr,reg);
                             _mm256_store_si256((__m256i*)dest_ptr,reg);
