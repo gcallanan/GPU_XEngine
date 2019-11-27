@@ -11,6 +11,7 @@
 
 #include "PipelinePackets.h"
 #include "Buffer.h"
+#include <string>
 
 #define NUM_SPEAD2_RX_THREADS 1
 
@@ -36,6 +37,7 @@ class SpeadRx{
     };
     public:
         SpeadRx(multi_node * nextNode,int rxPort);
+        SpeadRx(multi_node * nextNode,int rxPort, std::string ipAddress);
         int getNumCompletePackets();
     private:
         spead2::thread_pool worker;

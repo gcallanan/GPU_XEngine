@@ -2,7 +2,16 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
-SpeadRx::SpeadRx(multi_node * nextNode, int rxPort): worker(NUM_SPEAD2_RX_THREADS),stream(worker),n_complete(0),endpoint(boost::asio::ip::address_v4::from_string("239.8.0.20"), rxPort),nextNode(nextNode){
+SpeadRx::SpeadRx(multi_node * nextNode, int rxPort): worker(NUM_SPEAD2_RX_THREADS),stream(worker),n_complete(0),endpoint(boost::asio::ip::address_v4::any(), rxPort),nextNode(nextNode){
+    stream.addNextNodePointer(nextNode);
+    stream.emplace_reader<spead2::recv::udp_reader>(endpoint, spead2::recv::udp_reader::default_max_size, 8 * 1024 * 1024);
+    outPacketArmortiser = boost::make_shared<PacketArmortiser>();
+    buffer = boost::make_shared<Buffer>();
+    stream.addPacketArmortiser(outPacketArmortiser);
+    stream.addBuffer(buffer);
+}//from_string("239.8.0.20")
+
+SpeadRx::SpeadRx(multi_node * nextNode, int rxPort, std::string ipAddress): worker(NUM_SPEAD2_RX_THREADS),stream(worker),n_complete(0),endpoint(boost::asio::ip::address_v4::from_string(ipAddress.c_str()), rxPort),nextNode(nextNode){
     stream.addNextNodePointer(nextNode);
     stream.emplace_reader<spead2::recv::udp_reader>(endpoint, spead2::recv::udp_reader::default_max_size, 8 * 1024 * 1024);
     outPacketArmortiser = boost::make_shared<PacketArmortiser>();

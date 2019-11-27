@@ -44,6 +44,7 @@ int main(int argc, char** argv){
     desc.add_options()
         ("help", "produce help message")
         ("rx_port", po::value<int>()->default_value(8888), "Set receiver port")
+        ("rx_ip_address", po::value<std::string>()->default_value("none"), "Set the IP address to receive F-Engine data from. Support multicast addresses. If left blank will receive from any unicast IP address.")
         ("tx_port", po::value<std::string>()->default_value("9888"), "Set transmitter port")
     ;
 
@@ -60,6 +61,7 @@ int main(int argc, char** argv){
         std::cout<<"AVX not supported"<<std::endl;
     #endif
 
+    std::string rxIpAddress = vm["rx_ip_address"].as<std::string>();
     std::string txPort = vm["tx_port"].as<std::string>();
     int rxPort = vm["rx_port"].as<int>();
     //Create flow graph
@@ -99,7 +101,14 @@ int main(int argc, char** argv){
     }
     multi_node gpuNode(g,1,GPUWrapper(xGpuBuffer));
     multi_node txNode(g,1,SpeadTx(txPort));
-    SpeadRx rx(&(*transposeStagesList[0]),rxPort);
+
+    std::cout << "Assigned IP Address: " << rxIpAddress << std::endl;
+    std::shared_ptr<SpeadRx> rx; 
+    if(strcmp(rxIpAddress.c_str(),"none") == 0){
+        rx = std::make_shared<SpeadRx>(&(*transposeStagesList[0]),rxPort);
+    }else{
+        rx = std::make_shared<SpeadRx>(&(*transposeStagesList[0]),rxPort,rxIpAddress);
+    }
     
     //Construct Edges
     for (size_t i = 1; i < NUM_TRANSPOSE_STAGES; i++)
