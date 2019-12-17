@@ -28,6 +28,7 @@ class Spead2Rx{
     };
     public:
         Spead2Rx(int rxPort);
+        Spead2Rx(int rxPort, std::string ipAddress);
         int getNumCompletePackets();
     private:
         spead2::thread_pool worker;

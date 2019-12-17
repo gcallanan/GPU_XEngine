@@ -38,8 +38,10 @@ int main(int argc, char** argv){
     namespace po = boost::program_options;  
     po::options_description desc("Allowed options");
     desc.add_options()
-         ("help", "produce help message")
-         ("rx_port", po::value<int>()->default_value(8888), "Set receiver port")
+        ("help", "produce help message")
+        ("rx_port", po::value<int>()->default_value(8888), "Set receiver port")
+        ("rx_ip_address", po::value<std::string>()->default_value("none"), "Set the IP address to receive F-Engine data from. Support multicast addresses. If left blank will receive from any unicast IP address.")
+        ("tx_port", po::value<std::string>()->default_value("9888"), "Set transmitter port")
     ;
 
     po::variables_map vm;
@@ -51,8 +53,9 @@ int main(int argc, char** argv){
         return 1;
     }
 
+    std::string rxIpAddress = vm["rx_ip_address"].as<std::string>();
+    std::string txPort = vm["tx_port"].as<std::string>();
     int rxPort = vm["rx_port"].as<int>();
-    //Create flow graph
 
     //Multithreading Information
     pipelineCounts.Spead2RxStage=1;
@@ -61,14 +64,19 @@ int main(int argc, char** argv){
 
     int prevSpead2RxStage=0;
 
-    Spead2Rx rx(rxPort);
+    std::shared_ptr<Spead2Rx> rx; 
+    if(strcmp(rxIpAddress.c_str(),"none") == 0){
+        rx = std::make_shared<Spead2Rx>(rxPort);
+    }else{
+        rx = std::make_shared<Spead2Rx>(rxPort,rxIpAddress);
+    }
     
     std::cout << "Starting Receiver" << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
     int heapsDropped_prev = pipelineCounts.heapsDropped;
     int heapsReceived_prev = pipelineCounts.heapsReceived;
     while(true){
-        std::this_thread::sleep_for (std::chrono::seconds(10));
+        std::this_thread::sleep_for(std::chrono::seconds(10));
 
         //Reporting Code
         uint numPacketsReceivedComplete = (uint)pipelineCounts.Spead2RxStage - prevSpead2RxStage;

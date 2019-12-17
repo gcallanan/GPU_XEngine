@@ -8,6 +8,10 @@ Spead2Rx::Spead2Rx(int rxPort): worker(NUM_SPEAD2_RX_THREADS),stream(worker),n_c
     stream.emplace_reader<spead2::recv::udp_reader>(endpoint, spead2::recv::udp_reader::default_max_size, 8 * 1024 * 1024);
 }
 
+Spead2Rx::Spead2Rx(int rxPort, std::string ipAddress): worker(NUM_SPEAD2_RX_THREADS),stream(worker),n_complete(0),endpoint(boost::asio::ip::address_v4::from_string(ipAddress.c_str()), rxPort){
+    stream.emplace_reader<spead2::recv::udp_reader>(endpoint, spead2::recv::udp_reader::default_max_size, 8 * 1024 * 1024);
+}
+
 // boost::shared_ptr<StreamObject> Spead2Rx::process_heap(boost::shared_ptr<spead2::recv::heap> fheap){
 //     const auto &items = fheap->get_items();
 //     uint64_t fengId;
