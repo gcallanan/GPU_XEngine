@@ -54,10 +54,14 @@ parser.add_argument(
 parser.add_argument(
     '-2', '--p2', dest='p2', action='store', default=0, type=int,
     help='Second Antenna to observe')
+parser.add_argument(
+    '-l','--log10', action='store_true', default=False,
+    help='Display the power as a logarithmic value')
 args = parser.parse_args()
 
 ant1 = args.ant1
 ant2 = args.ant2
+useLog10 = args.log10
 
 p1 = args.p1
 p2 = args.p2
@@ -74,7 +78,7 @@ def getBaseline(data_arr, i, j, polarisationProduct,poll):
     array = [0]*16
     for k in range(0,NUM_CHANNELS_PER_XENGINE):
         baseline_index = getBaselineOffset(i,j)
-        array[k] = data_arr[k][baseline_index][polarisationProduct][poll]/256/NUM_ACCUMULATIONS
+        array[k] = data_arr[k][baseline_index][polarisationProduct][poll]#/256/NUM_ACCUMULATIONS
 #        print(k,baseline_index,i,j)
 #        print(data_arr[k][baseline_index][0][0]/256/1600)
     #print(array)
@@ -119,11 +123,17 @@ ant1 = args.ant1
 ant2 = args.ant2
 plt.grid()
 den = 1
-line11, = ax1.plot(range(0,16), range(0,16384//den,1024//den), 'b-x')
+if(useLog10):
+    line11, = ax1.plot(range(0,16), range(-96,12//den,7//den), 'b-x')
+else:
+    line11, = ax1.plot(range(0,16), range(0,2**31//den,2**27//den), 'b-x')
 line21, = ax2.plot(range(0,16), np.linspace(-math.pi,math.pi,num=16), 'b-x')
 
 ax1.legend()
-ax1.set_xlabel('Magnitude(abs)')
+if ~useLog10:
+    ax1.set_xlabel('Magnitude - Linear')
+else:
+    ax1.set_xlabel('Magnitude - dB')
 #ax1.set_ylabel('')
 ax2.legend()
 ax2.set_xlabel('Phase')
@@ -143,13 +153,20 @@ for heap in stream_recv:
     for item in items.values():
         if(item.id==0x1800):#print(heap.cnt, item.name, hex(item.value))
             baseline = getBaseline(item.value,ant1,ant2,0,0)
-            print(baseline)
+            #print(baseline)
             productIndex = p2 * 2 + p1; 
-            realValues = getBaseline(item.value,ant1,ant2,productIndex,0)
-            imagValues = getBaseline(item.value,ant1,ant2,productIndex,1)
-            pwr = np.multiply(realValues,realValues) + np.multiply(imagValues,imagValues)
-            phase = np.arctan2(realValues,imagValues)
-            line11.set_ydata(pwr)
+            realValues = np.abs(getBaseline(item.value,ant1,ant2,productIndex,0))
+            imagValues = np.abs(getBaseline(item.value,ant1,ant2,productIndex,1))
+            print(realValues)
+            #print(imagValues)
+            pwr = np.abs(np.square(realValues) + np.square(imagValues))
+            #print((10*np.log10(np.divide(pwr,(2**31)))))
+            print()
+            phase = np.arctan2(imagValues,realValues)
+            if(useLog10):
+                line11.set_ydata(10*np.log10(np.divide(pwr,(2**31))))
+            else:
+                line11.set_ydata(pwr)
             line21.set_ydata(phase)
             fig.canvas.draw()
         if(item.id==0x1600):
