@@ -19,21 +19,23 @@ OutputPacketQueuePtr SpeadTx::processPacket(boost::shared_ptr<PipelinePacket> in
     spead2::send::heap h(*f);
     std::int32_t xengRaw_p[2*4*NUM_BASELINES*NUM_CHANNELS_PER_XENGINE]={};
     int baselineIndex = 0;
+    BaselineProducts_out* base = (BaselineProducts_out*)inPacket_cast->getDataPointer();
     for (int k = 0; k < NUM_CHANNELS_PER_XENGINE; k++)
     {
         for (size_t i = 0; i < NUM_BASELINES; i++)
         {
-            BaselineProducts_out* base = (BaselineProducts_out*)inPacket_cast->getDataPointer();
             BaselineProducts_out baselineProductReal_p = base[k*NUM_BASELINES+i];
             BaselineProducts_out baselineProductImag_p = base[k*NUM_BASELINES+i + NUM_BASELINES*NUM_CHANNELS_PER_XENGINE];
-            xengRaw_p[baselineIndex] = baselineProductReal_p.product0;
-            xengRaw_p[baselineIndex+1] = baselineProductImag_p.product0;
-            xengRaw_p[baselineIndex+2] = baselineProductReal_p.product1;
-            xengRaw_p[baselineIndex+3] = baselineProductImag_p.product1;
-            xengRaw_p[baselineIndex+4] = baselineProductReal_p.product2;
-            xengRaw_p[baselineIndex+5] = baselineProductImag_p.product2;
-            xengRaw_p[baselineIndex+6] = baselineProductReal_p.product3;
-            xengRaw_p[baselineIndex+7] = baselineProductImag_p.product3;
+            xengRaw_p[baselineIndex] = static_cast<int32_t>(baselineProductReal_p.product0);
+            xengRaw_p[baselineIndex+1] = static_cast<int32_t>(baselineProductImag_p.product0);
+            xengRaw_p[baselineIndex+2] = static_cast<int32_t>(baselineProductReal_p.product1);
+            xengRaw_p[baselineIndex+3] = static_cast<int32_t>(baselineProductImag_p.product1);
+            xengRaw_p[baselineIndex+4] = static_cast<int32_t>(baselineProductReal_p.product2);
+            xengRaw_p[baselineIndex+5] = static_cast<int32_t>(baselineProductImag_p.product2);
+            xengRaw_p[baselineIndex+6] = static_cast<int32_t>(baselineProductReal_p.product3);
+            xengRaw_p[baselineIndex+7] = static_cast<int32_t>(baselineProductImag_p.product3);
+            //if(baselineProductReal_p.product0 != 0)
+            //    std::cout << xengRaw_p[baselineIndex] << " " << (int32_t)baselineProductReal_p.product0 <<  " " << baselineProductReal_p.product0 << std::endl;
             baselineIndex=baselineIndex+8;
         }
     }
