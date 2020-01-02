@@ -124,7 +124,7 @@ ant2 = args.ant2
 plt.grid()
 den = 1
 if(useLog10):
-    line11, = ax1.plot(range(0,16), range(-96,12//den,7//den), 'b-x')
+    line11, = ax1.plot(range(0,16), range(-60,4//den,4//den), 'b-x')
 else:
     line11, = ax1.plot(range(0,16), range(0,2**31//den,2**27//den), 'b-x')
 line21, = ax2.plot(range(0,16), np.linspace(-math.pi,math.pi,num=16), 'b-x')
