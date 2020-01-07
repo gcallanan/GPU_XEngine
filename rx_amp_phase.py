@@ -78,7 +78,7 @@ def getBaseline(data_arr, i, j, polarisationProduct,poll):
     array = [0]*16
     for k in range(0,NUM_CHANNELS_PER_XENGINE):
         baseline_index = getBaselineOffset(i,j)
-        array[k] = data_arr[k][baseline_index][polarisationProduct][poll]#/256/NUM_ACCUMULATIONS
+        array[k] = 1.0*data_arr[k][baseline_index][polarisationProduct][poll]#/256/NUM_ACCUMULATIONS
 #        print(k,baseline_index,i,j)
 #        print(data_arr[k][baseline_index][0][0]/256/1600)
     #print(array)
@@ -113,10 +113,10 @@ stream_recv.set_memory_allocator(pool_recv)
 stream_recv.add_udp_reader(9888)
 
 fig = plt.figure()
-fig.suptitle('Ant 1: {}, Ant 2: {}, Packets Received {},Timetamp: {}'.format(ant1,ant2,0,0))
+fig.suptitle('GPU X-Engine Output\n Ant 1: {}, Ant 2: {}, Packets Received {},Timetamp: {}'.format(ant1,ant2,0,0),fontsize=18)
 plt.ion()
 ax1 = fig.add_subplot(2,1,1)
-ax1.set_title('Ant 1 Poll {}, Poll 2 {}'.format(p1,p2))
+#ax1.set_title('Ant 1 Poll {}, Poll 2 {}'.format(p1,p2))
 plt.grid()
 ax2 = fig.add_subplot(2,1,2)
 ant1 = args.ant1
@@ -129,19 +129,25 @@ else:
     line11, = ax1.plot(range(0,16), range(0,2**31//den,2**27//den), 'b-x')
 line21, = ax2.plot(range(0,16), np.linspace(-math.pi,math.pi,num=16), 'b-x')
 
-ax1.legend()
-if ~useLog10:
-    ax1.set_xlabel('Magnitude - Linear')
+#ax1.legend()
+if (useLog10):
+    ax1.set_ylabel('Power Level(dBFS)',fontsize=14)
 else:
-    ax1.set_xlabel('Magnitude - dB')
-#ax1.set_ylabel('')
-ax2.legend()
-ax2.set_xlabel('Phase')
+    ax1.set_ylabel('Power Level(linear)',fontsize=14)
+ax1.set_xlabel('Frequency Channel',fontsize=14)
+ax1.set_title('Signal Power',fontsize=15)
+
+#ax2.legend()
+ax2.set_xlabel('Frequency Channel',fontsize=14)
+ax2.set_ylabel('Phase(rad)',fontsize=14)
+ax2.set_title('Signal Phase',fontsize=15)
 fig.show()
+fig.canvas.draw()
 
 print("Ready")
 ig = spead2.ItemGroup()
 num_heaps = 0
+firstPlot=False
 for heap in stream_recv:
     print("Received")
     if(descriptor_sent==False):
@@ -152,15 +158,16 @@ for heap in stream_recv:
     items = ig.update(heap)
     for item in items.values():
         if(item.id==0x1800):#print(heap.cnt, item.name, hex(item.value))
+            firstPlot=True
             baseline = getBaseline(item.value,ant1,ant2,0,0)
             #print(baseline)
             productIndex = p2 * 2 + p1; 
             realValues = np.abs(getBaseline(item.value,ant1,ant2,productIndex,0))
             imagValues = np.abs(getBaseline(item.value,ant1,ant2,productIndex,1))
             print(realValues)
-            #print(imagValues)
-            pwr = np.abs(np.square(realValues) + np.square(imagValues))
-            #print((10*np.log10(np.divide(pwr,(2**31)))))
+            print(imagValues)
+            pwr = np.abs(np.sqrt(np.square(realValues) + np.square(imagValues)))
+            print((10*np.log10(np.divide(pwr,(2**31)))))
             print()
             phase = np.arctan2(imagValues,realValues)
             if(useLog10):
@@ -170,9 +177,10 @@ for heap in stream_recv:
             line21.set_ydata(phase)
             fig.canvas.draw()
         if(item.id==0x1600):
-            fig.suptitle('Ant 1: {}, Ant 2: {}, Heaps: {},Timetamp: {}'.format(ant1,ant2,num_heaps,hex(item.value)))
+            fig.suptitle('GPU X-Engine Output\nAnt 1: {}, Ant 2: {}, Heaps: {},Timetamp: {}'.format(ant1,ant2,num_heaps,hex(item.value)))
     num_heaps += 1
     plt.pause(0.01)
+    #if(firstPlot): break
 
 stream_recv.stop()
 print("Received", num_heaps, "heaps")
