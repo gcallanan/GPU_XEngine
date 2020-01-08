@@ -57,6 +57,9 @@ parser.add_argument(
 parser.add_argument(
     '-l','--log10', action='store_true', default=False,
     help='Display the power as a logarithmic value')
+parser.add_argument(
+    '-s','--single_frame', action='store_true', default=False,
+    help='Only display a single frame before halting the program')
 args = parser.parse_args()
 
 ant1 = args.ant1
@@ -179,7 +182,7 @@ for heap in stream_recv:
             pwr = np.abs(np.sqrt(np.square(realValues) + np.square(imagValues)))
             print((10*np.log10(np.divide(pwr,(2**31)))))
             print()
-            phase = np.arctan2(-imagValues,realValues)
+            phase = np.arctan2(imagValues,realValues)
             if(useLog10):
                 line11.set_ydata(10*np.log10(np.divide(pwr,(2**31))))
             else:
@@ -192,7 +195,9 @@ for heap in stream_recv:
     if(~hasCorrectValue): print("item id 0x1800 missing")
     num_heaps += 1
     plt.pause(0.01)
-    #if(firstPlot): break
+    if(args.single_frame and firstPlot): 
+        #stream_recv.
+        break
 
 stream_recv.stop()
 print("Received", num_heaps, "heaps")

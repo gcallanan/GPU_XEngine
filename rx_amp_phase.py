@@ -57,6 +57,9 @@ parser.add_argument(
 parser.add_argument(
     '-l','--log10', action='store_true', default=False,
     help='Display the power as a logarithmic value')
+parser.add_argument(
+    '-s','--single_frame', action='store_true', default=False,
+    help='Only display a single frame before halting the program')
 args = parser.parse_args()
 
 ant1 = args.ant1
@@ -162,8 +165,8 @@ for heap in stream_recv:
             baseline = getBaseline(item.value,ant1,ant2,0,0)
             #print(baseline)
             productIndex = p2 * 2 + p1; 
-            realValues = np.abs(getBaseline(item.value,ant1,ant2,productIndex,0))
-            imagValues = np.abs(getBaseline(item.value,ant1,ant2,productIndex,1))
+            realValues = np.array(getBaseline(item.value,ant1,ant2,productIndex,0))
+            imagValues = np.array(getBaseline(item.value,ant1,ant2,productIndex,1))
             print(realValues)
             print(imagValues)
             pwr = np.abs(np.sqrt(np.square(realValues) + np.square(imagValues)))
@@ -180,7 +183,9 @@ for heap in stream_recv:
             fig.suptitle('GPU X-Engine Output\nAnt 1: {}, Ant 2: {}, Heaps: {},Timetamp: {}'.format(ant1,ant2,num_heaps,hex(item.value)))
     num_heaps += 1
     plt.pause(0.01)
-    #if(firstPlot): break
+    if(args.single_frame and firstPlot): 
+        #stream_recv.
+        break
 
 stream_recv.stop()
 print("Received", num_heaps, "heaps")
