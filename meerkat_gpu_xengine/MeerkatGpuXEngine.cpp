@@ -46,6 +46,7 @@ int main(int argc, char** argv){
         ("rx_port", po::value<int>()->default_value(8888), "Set receiver port")
         ("rx_ip_address", po::value<std::string>()->default_value("none"), "Set the IP address to receive F-Engine data from. Support multicast addresses. If left blank will receive from any unicast IP address.")
         ("tx_port", po::value<std::string>()->default_value("9888"), "Set transmitter port")
+        ("num_accumulations", po::value<int>()->default_value(408), "Set number of accumulations")
     ;
 
     po::variables_map vm;
@@ -64,6 +65,7 @@ int main(int argc, char** argv){
     std::string rxIpAddress = vm["rx_ip_address"].as<std::string>();
     std::string txPort = vm["tx_port"].as<std::string>();
     int rxPort = vm["rx_port"].as<int>();
+    int numAccumulations = vm["num_accumulations"].as<int>();
     //Create flow graph
     tbb::flow::graph g;
 
@@ -99,10 +101,9 @@ int main(int argc, char** argv){
     {
        transposeStagesList.push_back(boost::make_shared<multi_node>(g,1,Transpose(xGpuBuffer,i)));
     }
-    multi_node gpuNode(g,1,GPUWrapper(xGpuBuffer));
+    multi_node gpuNode(g,1,GPUWrapper(xGpuBuffer,numAccumulations));
     multi_node txNode(g,1,SpeadTx(txPort));
 
-    std::cout << "Assigned IP Address: " << rxIpAddress << std::endl;
     std::shared_ptr<SpeadRx> rx; 
     if(strcmp(rxIpAddress.c_str(),"none") == 0){
         rx = std::make_shared<SpeadRx>(&(*transposeStagesList[0]),rxPort);
@@ -120,6 +121,8 @@ int main(int argc, char** argv){
 
     //Start Graph
     std::cout << "Transpose Block Size per stage: " << (NUM_ANTENNAS/NUM_TRANSPOSE_STAGES) << std::endl;
+    std::cout << "Assigned IP Address: " << rxIpAddress << std::endl;
+    std::cout << "Number of accumulations: " << numAccumulations << std::endl;
     std::cout << "Starting Graph" << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
     int heapsDropped_prev = pipelineCounts.heapsDropped;

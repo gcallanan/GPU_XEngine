@@ -6,6 +6,12 @@ GPUWrapper::GPUWrapper(boost::shared_ptr<XGpuBufferManager> xGpuBufferManager): 
     oldest_timestamp = 0;
 }
 
+GPUWrapper::GPUWrapper(boost::shared_ptr<XGpuBufferManager> xGpuBufferManager, int accumulationsThreshold): accumulationsThreshold(accumulationsThreshold),numAccumulations(0),xGpuBufferManager(xGpuBufferManager),storageQueue(){
+    this->stageName = "GPUWrapper";
+    this->armortiserMaxSize = 1;
+    oldest_timestamp = 0;
+}
+
 void GPUWrapper::setAccumulationsThreshold(int accumulationsThreshold){
     if(accumulationsThreshold>DEFAULT_ACCUMULATIONS_THRESHOLD){
         std::cout << accumulationsThreshold << " is higher than the maximum of " << DEFAULT_ACCUMULATIONS_THRESHOLD << ". Setting Threshold to the maximum" << std::endl;

@@ -14,6 +14,7 @@
 class GPUWrapper : public PipelineStage{
     public:
         GPUWrapper(boost::shared_ptr<XGpuBufferManager> xGpuBufferManager);
+        GPUWrapper(boost::shared_ptr<XGpuBufferManager> xGpuBufferManager,int accumulationsThreshold);
         OutputPacketQueuePtr processPacket(boost::shared_ptr<PipelinePacket> inPacket);
         void setAccumulationsThreshold(int accumulationsThreshold);
         int getAccumulationsThreshold();
