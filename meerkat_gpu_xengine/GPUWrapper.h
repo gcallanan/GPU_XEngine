@@ -13,8 +13,8 @@
 
 class GPUWrapper : public PipelineStage{
     public:
-        GPUWrapper(boost::shared_ptr<XGpuBufferManager> xGpuBufferManager);
-        GPUWrapper(boost::shared_ptr<XGpuBufferManager> xGpuBufferManager,int accumulationsThreshold);
+        GPUWrapper(boost::shared_ptr<XGpuBufferManager> xGpuBufferManager, int64_t syncStart);
+        GPUWrapper(boost::shared_ptr<XGpuBufferManager> xGpuBufferManager,int64_t syncStart ,int accumulationsThreshold);
         OutputPacketQueuePtr processPacket(boost::shared_ptr<PipelinePacket> inPacket);
         void setAccumulationsThreshold(int accumulationsThreshold);
         int getAccumulationsThreshold();
@@ -27,7 +27,10 @@ class GPUWrapper : public PipelineStage{
         boost::shared_ptr<GPUWrapperPacket> tempGpuWrapperPacket;
         boost::shared_ptr<XGpuBufferManager> xGpuBufferManager;
         std::queue<boost::shared_ptr<TransposePacket>> storageQueue;
-        int64_t oldest_timestamp;    
+        int64_t oldest_timestamp;   
+        int64_t syncStart; 
+        int64_t syncTimestamp;
+        bool synced;
 };
 
 #endif

@@ -167,6 +167,7 @@ for heap in stream_recv:
     #print("Got heap", heap.cnt)
     items = ig.update(heap)
     hasCorrectValue = False
+    timestamp=0
     print(0x1600,0x1800,0x4103)
     for item in items.values():
         print(item.id, item.shape)
@@ -191,11 +192,12 @@ for heap in stream_recv:
             fig.canvas.draw()
             firstPlot=True
         if(item.id==0x1600):
+            timestamp=item.value
             fig.suptitle('SKARAB X-Engine Output\nAnt 1: {}, Ant 2: {}, Heaps: {},Timetamp: {}'.format(ant1,ant2,num_heaps,hex(item.value)))
     if(~hasCorrectValue): print("item id 0x1800 missing")
     num_heaps += 1
     plt.pause(0.01)
-    if(args.single_frame and firstPlot): 
+    if(args.single_frame and firstPlot and timestamp > 0x580000000000): 
         #stream_recv.
         break
 

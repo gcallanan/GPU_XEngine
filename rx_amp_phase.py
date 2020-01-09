@@ -159,6 +159,7 @@ for heap in stream_recv:
 
     print("Got heap", heap.cnt)
     items = ig.update(heap)
+    timestamp = 0
     for item in items.values():
         if(item.id==0x1800):#print(heap.cnt, item.name, hex(item.value))
             firstPlot=True
@@ -180,11 +181,12 @@ for heap in stream_recv:
             line21.set_ydata(phase)
             fig.canvas.draw()
         if(item.id==0x1600):
+            timestamp=item.value
             fig.suptitle('GPU X-Engine Output\nAnt 1: {}, Ant 2: {}, Heaps: {},Timetamp: {}'.format(ant1,ant2,num_heaps,hex(item.value)))
     num_heaps += 1
     plt.pause(0.01)
-    if(args.single_frame and firstPlot): 
-        #stream_recv.
+    if(args.single_frame and firstPlot and timestamp > 0x580000000000 ): 
+        #print(timestamp,0x555000000000,timestamp > 0x555000000000)
         break
 
 stream_recv.stop()

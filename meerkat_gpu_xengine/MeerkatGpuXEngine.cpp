@@ -47,6 +47,7 @@ int main(int argc, char** argv){
         ("rx_ip_address", po::value<std::string>()->default_value("none"), "Set the IP address to receive F-Engine data from. Support multicast addresses. If left blank will receive from any unicast IP address.")
         ("tx_port", po::value<std::string>()->default_value("9888"), "Set transmitter port")
         ("num_accumulations", po::value<int>()->default_value(408), "Set number of accumulations")
+        ("sync_start", po::value<int64_t>()->default_value(0), "Set number of accumulations")
     ;
 
     po::variables_map vm;
@@ -66,6 +67,7 @@ int main(int argc, char** argv){
     std::string txPort = vm["tx_port"].as<std::string>();
     int rxPort = vm["rx_port"].as<int>();
     int numAccumulations = vm["num_accumulations"].as<int>();
+    int syncStart = vm["sync_start"].as<int64_t>();
     //Create flow graph
     tbb::flow::graph g;
 
@@ -101,7 +103,7 @@ int main(int argc, char** argv){
     {
        transposeStagesList.push_back(boost::make_shared<multi_node>(g,1,Transpose(xGpuBuffer,i)));
     }
-    multi_node gpuNode(g,1,GPUWrapper(xGpuBuffer,numAccumulations));
+    multi_node gpuNode(g,1,GPUWrapper(xGpuBuffer,syncStart,numAccumulations));
     multi_node txNode(g,1,SpeadTx(txPort));
 
     std::shared_ptr<SpeadRx> rx; 
