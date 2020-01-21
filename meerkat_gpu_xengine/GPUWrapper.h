@@ -30,6 +30,7 @@ class GPUWrapper : public PipelineStage{
         int64_t oldest_timestamp;   
         int64_t syncStart; 
         int64_t syncTimestamp;
+        int64_t missingTimestampsThisAccumulation;
         bool synced;
 };
 

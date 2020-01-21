@@ -161,7 +161,7 @@ for heap in stream_recv:
     for item in items.values():
         if(item.id==0x1800):#print(heap.cnt, item.name, hex(item.value))
             baseline = getBaseline(item.value,ant1,ant2,0,0)
-            print("Heap: ",heap.cnt," Sample:",baseline)
+            print("Heap: ",heap.cnt," Samples:",np.around(baseline,decimals=2))
             line11.set_ydata(baseline)
             baseline = getBaseline(item.value,ant1,ant2,0,1)
             line12.set_ydata(baseline)
