@@ -65,7 +65,7 @@ class XGpuBufferManager{
           context.matrix_len = xgpu_info.matLength*DEFAULT_XGPU_OUTPUT_BUFFERS_THRESHOLD;//Determines size of output ring buffer. With xgpu_info.matLength being the size of a single output packet and DEFAULT_XGPU_OUTPUT_BUFFERS_THRESHOLD being the total number of packets to be able to store
           context.array_h = (ComplexInput*)malloc(context.array_len*sizeof(ComplexInput));
           context.matrix_h = (Complex*)malloc(context.matrix_len*sizeof(Complex));
-          std::cout << ((float)(context.array_len*sizeof(ComplexInput)))/1024/1024/1024 << " GB of gpu storage allocated." << std::endl; 
+          std::cout << ((float)(context.array_len*sizeof(ComplexInput)))/1024/1024/1024 << " GB of storage allocated for CPU side ring buffer feeding GPU." << std::endl; 
           xgpu_error = xgpuInit(&context, 0);
           if(xgpu_error) {
               std::cout << "xgpuInit returned error code: " << xgpu_error << std::endl;

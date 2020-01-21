@@ -105,7 +105,7 @@ OutputPacketQueuePtr Transpose::processPacket(boost::shared_ptr<PipelinePacket> 
                             {
                                 if(packetPresent[block_feng_index]){
                                     __m256i * ptr =  (__m256i*) &(((DualPollComplex_in*)inPacket_cast->getDataPtr(fengId+block_feng_index))[channel_index*NUM_TIME_SAMPLES + time_index]);
-                                    reg_in[block_feng_index] = _mm256_loadu_si256(ptr);
+                                    reg_in[block_feng_index] = _mm256_load_si256(ptr);
                                 }else{
                                     reg_in[block_feng_index] = _mm256_setzero_si256();
                                 }

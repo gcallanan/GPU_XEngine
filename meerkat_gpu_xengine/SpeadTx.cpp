@@ -26,6 +26,8 @@ OutputPacketQueuePtr SpeadTx::processPacket(boost::shared_ptr<PipelinePacket> in
         {
             BaselineProducts_out baselineProductReal_p = base[k*NUM_BASELINES+i];
             BaselineProducts_out baselineProductImag_p = base[k*NUM_BASELINES+i + NUM_BASELINES*NUM_CHANNELS_PER_XENGINE];
+            //if(baselineProductReal_p.product0 != 0)
+            //    std::cout << k*NUM_BASELINES+i << " "  << static_cast<int32_t>(baselineProductReal_p.product0) << " ";
             xengRaw_p[baselineIndex] = static_cast<int32_t>(baselineProductReal_p.product0);
             xengRaw_p[baselineIndex+1] = static_cast<int32_t>(baselineProductImag_p.product0);
             xengRaw_p[baselineIndex+2] = static_cast<int32_t>(baselineProductReal_p.product1);
@@ -34,8 +36,6 @@ OutputPacketQueuePtr SpeadTx::processPacket(boost::shared_ptr<PipelinePacket> in
             xengRaw_p[baselineIndex+5] = static_cast<int32_t>(baselineProductImag_p.product2);
             xengRaw_p[baselineIndex+6] = static_cast<int32_t>(baselineProductReal_p.product3);
             xengRaw_p[baselineIndex+7] = static_cast<int32_t>(baselineProductImag_p.product3);
-            //if(baselineProductReal_p.product0 != 0)
-            //    std::cout << xengRaw_p[baselineIndex] << " " << (int32_t)baselineProductReal_p.product0 <<  " " << baselineProductReal_p.product0 << std::endl;
             baselineIndex=baselineIndex+8;
         }
     }

@@ -40,8 +40,9 @@
 #define N_POL 2
 #define TIME_SAMPLES_PER_PACKET 256
 
-#define INIT_TIMESTAMP 2111
-#define TIMESTAMP_VARIATION 3
+#define TIMESTAMP_VARIATION 5
+
+#define FFT_SIZE (N_CHANNELS_PER_X_ENGINE*4*N_ANTS)
 
 enum SampleDataFormat{one_ant_test,two_ant_test,ramp,all_zero};
 SampleDataFormat sample_data_format = two_ant_test; 
@@ -69,6 +70,8 @@ int main(int argc, char** argv)
         ("ant1", po::value<std::int32_t>()->default_value(17), "Set 1st Antenna to add non-zero data to.(range: 0 to 63)")
         ("ant2", po::value<std::int32_t>()->default_value(17), "Set 2nd Antenna to add non-zero data to.(range: 0 to 63)")
         ("num_packets_total", po::value<std::int32_t>()->default_value(1000000), "Total number of sets of 64 packets to send.")
+        ("sync_start", po::value<int64_t>()->default_value(44040089), "Set number of accumulations")
+        ("accumulation_length", po::value<int32_t>()->default_value(408), "Set number of accumulations")
     ;
 
     po::variables_map vm;
@@ -83,6 +86,9 @@ int main(int argc, char** argv)
     std::string txPort = vm["tx_port"].as<std::string>();
     std::string destIp = vm["dest_ip"].as<std::string>();
     std::int32_t dropRate = vm["drop_rate"].as<std::int32_t>();
+    std::int32_t accLength = vm["accumulation_length"].as<std::int32_t>();
+    int syncStart = vm["sync_start"].as<int64_t>();
+
     if(dropRate < 0 || dropRate >100){
         std::cout <<  "ERROR: Drop rate set to "<<dropRate<<". Not in range of 0 to 100." << std::endl << "Exiting Program" << std::endl;
         return -1;
@@ -150,7 +156,7 @@ int main(int argc, char** argv)
     std::int8_t feng_raw[N_ANTS][N_CHANNELS_PER_X_ENGINE*TIME_SAMPLES_PER_PACKET*N_POL*2] = {};
     spead2::send::heap h[N_ANTS];
 
-    int8_t array_temp[8] = {-8,-2,-1,1,2,4,6,8};
+    int8_t array_temp[8] = {1,1,1,1,1,1,1,1};//{-3,-2,-1,1,2,3,4,5};
     int arrayPos = 0;
     bool regen = 1;
     int droppedPackets = 0;
@@ -158,19 +164,24 @@ int main(int argc, char** argv)
    
     //Generates an array of queus to make the timestamps out of order - this whole system could be done better but the out of order transmision was only added near the end
     std::vector<std::uint64_t> timestampArrayOfQueues[N_ANTS];
-    for (int k = TIMESTAMP_VARIATION-1; k >= 0; k--)
+    for (int k = 0; k < TIMESTAMP_VARIATION-1; k++)
     {
         //std::cout << k << std::endl;
         for (size_t j = 0; j < N_ANTS; j++)
         {
-            timestampArrayOfQueues[j].push_back((INIT_TIMESTAMP-k));
+            timestampArrayOfQueues[j].push_back((syncStart*FFT_SIZE*2*TIME_SAMPLES_PER_PACKET+k));
         }
     }
 
     for(size_t k = 1; k < numPackets; k++)
     {
+        //<<<<<<<<<<START SECTION THAT GENERATES DATA>>>>>>>>>>>
         if(regen == 1){
+            //std::cout <<timestampArrayOfQueues[0][0] << " " << timestampArrayOfQueues[0][0]/256/8192%accLength << std::endl;
             regen=0;
+            for(int tempI = 0; tempI < 8; tempI++){
+                array_temp[tempI]=(array_temp[tempI]+1) %5;
+            }
             for (size_t j = 0; j < N_ANTS; j++)
             {
                 switch(sample_data_format){
@@ -242,38 +253,52 @@ int main(int argc, char** argv)
             //std::cout << (int)array_temp[(arrayPos+0)%8] << " " << (int)array_temp[(arrayPos+3)%8] << std::endl;
             arrayPos++;
         }
+        //<<<<<<<<<<END SECTION THAT GENERATES DATA>>>>>>>>>>>
 
-        /* code */ 
+        //<<<<<<<<<<START SECTION THAT GENERATES HEAPS>>>>>>>>>>> 
         numSent=0; 
         for(int j = N_ANTS-1; j>=0; j--){ 
             h[j] = spead2::send::heap(f);
 
-            timestampArrayOfQueues[j].push_back((INIT_TIMESTAMP+k));
-            if(k%2==0){
+            timestampArrayOfQueues[j].push_back(((syncStart+k)*FFT_SIZE*2*TIME_SAMPLES_PER_PACKET));
+            //if(k%2==0){
                 timestamp[j] = timestampArrayOfQueues[j].front();
                 timestampArrayOfQueues[j][0];
                 timestampArrayOfQueues[j].erase(timestampArrayOfQueues[j].begin());
-            }else{
-                const int randPos = std::rand() % TIMESTAMP_VARIATION;
-                timestamp[j] = timestampArrayOfQueues[j].at(randPos);
-                timestampArrayOfQueues[j].erase(timestampArrayOfQueues[j].begin()+randPos);
-            }
+            //}else{
+            //    const int randPos = std::rand() % TIMESTAMP_VARIATION;
+            //    timestamp[j] = timestampArrayOfQueues[j].at(randPos);
+            //    timestampArrayOfQueues[j].erase(timestampArrayOfQueues[j].begin()+randPos);
+            //}
 
             //if(j == 0){
             //    std::cout << timestamp[j] << std::endl;
             //}
-    //        std::cout << "Timestamp" << timestamp[j] << std::endl;
+            //std::cout << "Timestamp" << timestamp[j] << std::endl;
             feng_id[j] = j;
             frequency[j] = 2048;
                 
             //std::cout << sizeof(feng_raw[j]) << std::endl;
-            h[j].add_item(0x1600, timestamp[j]*256*2*N_CHANNELS);
+            h[j].add_item(0x1600, timestamp[j]);
             h[j].add_item(0x4101, feng_id[j]);
             h[j].add_item(0x4103, frequency[j]);
             h[j].add_item(0x4300, &feng_raw[j],sizeof(feng_raw[j]),true); 
+
+            if(j == 0){
+                int64_t accNum = (timestamp[j]/256/8192-syncStart)%accLength;
+                if(accNum==accLength-1){
+                    regen=1;
+                    //std::cout << "Regen" << std::endl;
+                }
+                //std::cout << "Remainder: " << accNum << ", Timestamp Diff: " << timestampArrayOfQueues[j][0]-timestamp[j] << ", Ant: " << j << std::endl;
+            }
             
             //m.lock();
         }
+        //<<<<<<<<<<END SECTION THAT GENERATES HEAPS>>>>>>>>>>>
+
+
+        //<<<<<<<<<<START SECTION THAT TRANSMITS HEAPS>>>>>>>>>>>
         for(int j = N_ANTS-1; j>=0; j--){
             if(std::rand()%100 >= dropRate){
                 stream.async_send_heap(h[j], [j,k] (const boost::system::error_code &ec, spead2::item_pointer_t bytes_transferred)
@@ -297,8 +322,10 @@ int main(int argc, char** argv)
                 numSent++;
                 droppedPackets++;
             }
+            //<<<<<<<<<<END SECTION THAT TRANSMITS HEAPS>>>>>>>>>>>
+
+            //<<<<<<<<<<START SECTION THAT DETERMINES WHETHER TO PRINT OUT RATE AND REGEN DATA>>>>>>>>>>>
             if(k%REPORTING_SPACE==0 && j == 0){
-                regen=1;
                 auto now = std::chrono::high_resolution_clock::now();
                 std::chrono::duration<double> diff = now-start;
                 start=now;
@@ -307,6 +334,10 @@ int main(int argc, char** argv)
                 //std::cout<< k << " sets of 64 packets sent, time per packet : "<< diff.count()/64/REPORTING_SPACE*1000*1000 << " us. Time per set of 64: "<< diff.count()/REPORTING_SPACE*1000 << "ms. Time per block: " <<diff.count()<< std::endl;
                 droppedPackets = 0;
             }
+            //if(){ //Figure out the condition to make regen happen, check timestamp generation is deterministic
+            //    regen=1;
+            //}
+            //<<<<<<<<<<END SECTION THAT DETERMINES WHETHER TO PRINT OUT RATE AND REGEN DATA>>>>>>>>>>>
         }
         
         while(true){

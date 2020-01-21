@@ -59,7 +59,7 @@
 #define TIMESTAMP_JUMP (NUM_TIME_SAMPLES*2*FFT_SIZE)
 
 /** Maximum number of accumulations */
-#define DEFAULT_ACCUMULATIONS_THRESHOLD ((int)(1632*3))
+#define DEFAULT_ACCUMULATIONS_THRESHOLD ((int)(1632*2))
 
 /** Before packets are handed over to the next stage of the pipeline they are grouped into a larger packet to reduce thread overhead. ARMORTISER_SIZE specifies the number of packets to group*/
 #define ARMORTISER_SIZE 300

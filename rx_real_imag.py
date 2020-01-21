@@ -145,22 +145,23 @@ ax3.set_xlabel('Frequency Channel')
 ax4.legend()
 ax4.set_xlabel('Frequency Channel')
 fig.show()
+#fig.set_visible(False)
 
 print("Ready")
 ig = spead2.ItemGroup()
 num_heaps = 0
 for heap in stream_recv:
-    print("Received")
+    #print("Received")
     if(descriptor_sent==False):
         stream_send.send_heap(ig_send.get_heap())
         descriptor_sent=True
 
-    print("Got heap", heap.cnt)
+    #print("Got heap", heap.cnt)
     items = ig.update(heap)
     for item in items.values():
         if(item.id==0x1800):#print(heap.cnt, item.name, hex(item.value))
             baseline = getBaseline(item.value,ant1,ant2,0,0)
-            print(baseline)
+            print("Heap: ",heap.cnt," Sample:",baseline)
             line11.set_ydata(baseline)
             baseline = getBaseline(item.value,ant1,ant2,0,1)
             line12.set_ydata(baseline)

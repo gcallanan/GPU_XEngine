@@ -5,7 +5,7 @@
 
 #include "global_definitions.h"
 #include "xgpu.h"
-#include <queue>
+#include <deque>
 #include "XGpuBufferManager.h"
 #include "PipelinePackets.h"
 #include "PipelineStages.h"
@@ -26,7 +26,7 @@ class GPUWrapper : public PipelineStage{
         const int finalSyncOp = SYNCOP_DUMP;
         boost::shared_ptr<GPUWrapperPacket> tempGpuWrapperPacket;
         boost::shared_ptr<XGpuBufferManager> xGpuBufferManager;
-        std::queue<boost::shared_ptr<TransposePacket>> storageQueue;
+        std::deque<boost::shared_ptr<TransposePacket>> storageQueue;
         int64_t oldest_timestamp;   
         int64_t syncStart; 
         int64_t syncTimestamp;
