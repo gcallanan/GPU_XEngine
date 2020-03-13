@@ -128,6 +128,7 @@ plt.grid()
 den = 1
 if(useLog10):
     line11, = ax1.plot(range(0,16), range(-60,4//den,4//den), 'b-x')
+    ax1.set_ylim([-60,-0])
 else:
     line11, = ax1.plot(range(0,16), range(0,2**31//den,2**27//den), 'b-x')
 line21, = ax2.plot(range(0,16), np.linspace(-math.pi,math.pi,num=16), 'b-x')
@@ -144,6 +145,7 @@ ax1.set_title('Signal Power',fontsize=15)
 ax2.set_xlabel('Frequency Channel',fontsize=14)
 ax2.set_ylabel('Phase(rad)',fontsize=14)
 ax2.set_title('Signal Phase',fontsize=15)
+ax2.set_ylim([-3.14,3.14])
 fig.show()
 fig.canvas.draw()
 
@@ -185,7 +187,7 @@ for heap in stream_recv:
             fig.suptitle('GPU X-Engine Output\nAnt 1: {}, Ant 2: {}, Heaps: {},Timetamp: {}'.format(ant1,ant2,num_heaps,hex(item.value)))
     num_heaps += 1
     plt.pause(0.01)
-    if(args.single_frame and firstPlot and timestamp > 0x580000000000 ): 
+    if(args.single_frame and firstPlot and timestamp > 0x21c000000000 ): 
         #print(timestamp,0x555000000000,timestamp > 0x555000000000)
         break
 

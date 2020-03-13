@@ -85,7 +85,7 @@ OutputPacketQueuePtr GPUWrapper::processPacket(boost::shared_ptr<PipelinePacket>
             
             //This debugging code was added to perform a sync test, need to be used in conjunction with f_engine_simulator script to sync properly. Keep commented out unless you want to perform this test
             storageQueue.push_back(inPacket_cast);
-            if((int64_t)storageQueue[accumulationsThreshold-1-missingTimestampsThisAccumulation]->getDataPointer()[68] != (int64_t)storageQueue[0]->getDataPointer()[68]){
+/*            if((int64_t)storageQueue[accumulationsThreshold-1-missingTimestampsThisAccumulation]->getDataPointer()[68] != (int64_t)storageQueue[0]->getDataPointer()[68]){
                 int i = 0;
                 std::cout   << std::setfill('0') << std::setw(3) << i << " " 
                             << std::setfill('0') << std::setw(3) << (storageQueue[i]->getTimestamp()/256/8192-syncStart/256/8192)%accumulationsThreshold << " " 
@@ -128,7 +128,7 @@ OutputPacketQueuePtr GPUWrapper::processPacket(boost::shared_ptr<PipelinePacket>
 
                 
                     std::cout << "Still not quite correct" <<std::endl;
-            }
+            }*/
                 
             //std::cout << storageQueue[accumulationsThreshold-1]->getBufferOffset() << " Accumulation has occured ";
 
