@@ -1,19 +1,11 @@
-#!/usr/bin/env python
-
-# Copyright 2015 SKA South Africa
-#
-# This program is free software: you can redistribute it and/or modify it under
-# the terms of the GNU Lesser General Public License as published by the Free
-# Software Foundation, either version 3 of the License, or (at your option) any
-# later version.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
-# details.
-#
-# You should have received a copy of the GNU Lesser General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+## \file rx_amp_phase_multicast_python2p7.py
+ #
+ # \brief A file for plotting the amplitude and phase values of the baselines produced by the SKARAB X-Engine.  
+ #
+ # \author Gareth Callanan
+ # 
+ # This file can subscribe to the output of a SKARAB X-Engine and then plots the amplitude and phase values for a single interpolarisation product of a single antenna pair
+ # This file is a variation of the rx_amp_phase_multicast.py file - it runs on python 2.7 instead of 3.x. This was done because some of the servers on site use old versions of debian that do not support python 3
 
 from __future__ import print_function, division
 import spead2

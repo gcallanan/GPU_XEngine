@@ -1,19 +1,12 @@
-#!/usr/bin/env python
+## \file rx_amp_phase_multicast.py
+ #
+ # \brief A file for plotting the amplitude and phase values of the baselines produced by the SKARAB X-Engine.  
+ #
+ # \author Gareth Callanan
+ # 
+ # This file can subscribe to the output of a SKARAB X-Engine and then plots the amplitude and phase values for a single interpolarisation product of a single antenna pair
+ # This file performs a similar function to the rx_amp_phase.py file except that it operates on a SKARAB X-Engine instead of the GPU X-Engine
 
-# Copyright 2015 SKA South Africa
-#
-# This program is free software: you can redistribute it and/or modify it under
-# the terms of the GNU Lesser General Public License as published by the Free
-# Software Foundation, either version 3 of the License, or (at your option) any
-# later version.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
-# details.
-#
-# You should have received a copy of the GNU Lesser General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import print_function, division
 import spead2

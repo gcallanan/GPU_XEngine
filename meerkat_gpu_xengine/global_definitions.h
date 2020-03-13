@@ -5,7 +5,7 @@
  *
  * \author Gareth Callanan
  * 
- * This file contains most of the macros that the user will need to change for their own needs. It also contains the pipeline packet classes that are used to pass data between pipeline stages. The 
+ * This file contains most of the macros that the user will need to change in order to modify the project for their own requirements.
  *
  */
 

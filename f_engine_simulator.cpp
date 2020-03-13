@@ -1,17 +1,13 @@
-/* Copyright 2015 SKA South Africa
+/**
+ * \file f_engine_simulator.cpp
  *
- * This program is free software: you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ * \brief Standalone F-Engine Simulator. 
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
- * details.
+ * \author Gareth Callanan
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * This file is a standalone program that can be built on any machine with SPEAD2 installed. It is designed to simulate a single F-Engine output stream with all 64 F-Engine packets in the stream
+ * 
+ * It can generate data at the requried output rate as long as the stream config packet size is set to 4 KiB and above.
  */
 
 #include <iostream>
